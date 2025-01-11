@@ -1,5 +1,8 @@
 /** @format */
 
+import { Button } from "@/components/ui/button";
+import { AiFillAppstore } from "react-icons/ai";
+
 export default function Home() {
   return (
     <div>
@@ -7,6 +10,10 @@ export default function Home() {
       <h1 className="font-body text-error">
         Welcome to eDruk-Court Development
       </h1>
+      <div>
+        <Button>Hello</Button>
+        <AiFillAppstore />
+      </div>
     </div>
   );
 }
