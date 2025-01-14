@@ -1,7 +1,6 @@
 /** @format */
 
-import { Button } from "@/components/ui/button";
-import { AiFillAppstore } from "react-icons/ai";
+import CustomButton from "@/components/common/CustomButton";
 
 export default function Home() {
   return (
@@ -11,8 +10,7 @@ export default function Home() {
         Welcome to eDruk-Court Development
       </h1>
       <div>
-        <Button>Hello</Button>
-        <AiFillAppstore />
+        <CustomButton>Hello</CustomButton>
       </div>
     </div>
   );
