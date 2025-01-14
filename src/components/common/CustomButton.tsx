@@ -1,7 +1,7 @@
 /** @format */
 
 import React from "react";
-import { Button } from "@/components/ui/button"; // Adjust the import path as necessary
+import { Button } from "@/components/ui/button";
 
 type StyledButtonProps = React.ComponentProps<typeof Button>;
 
