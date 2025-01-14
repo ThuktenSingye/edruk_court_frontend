@@ -28,7 +28,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${arvoSan.variable} ${robotoSan.variable} antialiased`}>
+      <body
+        className={`${arvoSan.variable} ${robotoSan.variable} antialiased font-body text-sm md:text-base`}>
         {children}
       </body>
     </html>
