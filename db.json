@@ -1,0 +1,451 @@
+{
+    "caseStatistics": [
+        {
+            "id": 1,
+            "title": "Total Cases",
+            "count": "3",
+            "growth": "16%"
+        },
+        {
+            "id": 2,
+            "title": "Civil Case",
+            "count": "1",
+            "growth": "16%"
+        },
+        {
+            "id": 3,
+            "title": "Criminal Cases",
+            "count": "2",
+            "growth": "16%"
+        },
+        {
+            "id": 4,
+            "title": "Pending Cases",
+            "count": "2",
+            "growth": "12%"
+        },
+        {
+            "id": 5,
+            "title": "Resolved Cases",
+            "count": "1",
+            "growth": "12%"
+        },
+        {
+            "id": 6,
+            "title": "Appealed Cases",
+            "count": "0",
+            "growth": "12%"
+        }
+    ],
+    "casesRegistrar": [
+        {
+            "id": "2",
+            "regNo": "20023",
+            "regDate": "20/11/2024",
+            "plaintiff": "Pema Lhamo",
+            "cid": "10101004841",
+            "caseTitle": "Burglary",
+            "status": "Today"
+        },
+        {
+            "id": "3",
+            "regNo": "20023",
+            "regDate": "20/11/2024",
+            "plaintiff": "Karma Dorji",
+            "cid": "10101004847",
+            "caseTitle": "Burglary",
+            "status": "Yesterday"
+        },
+        {
+            "id": "3",
+            "regNo": "20023",
+            "regDate": "20/11/2024",
+            "plaintiff": "Karma Dorji",
+            "cid": "10101004847",
+            "caseTitle": "Burglary",
+            "status": "Yesterday"
+        },
+        {
+            "id": "3",
+            "regNo": "20023",
+            "regDate": "20/11/2024",
+            "plaintiff": "Karma Dorji",
+            "cid": "10101004847",
+            "caseTitle": "Burglary",
+            "status": "Yesterday"
+        },
+        {
+            "id": "3",
+            "regNo": "20023",
+            "regDate": "20/11/2024",
+            "plaintiff": "Karma Dorji",
+            "cid": "10101004847",
+            "caseTitle": "Burglary",
+            "status": "Yesterday"
+        },
+        {
+            "id": "3",
+            "regNo": "20023",
+            "regDate": "20/11/2024",
+            "plaintiff": "Karma Dorji",
+            "cid": "10101004847",
+            "caseTitle": "Burglary",
+            "status": "Yesterday"
+        }
+    ],
+    "casesJudge": [
+        {
+            "id": "2",
+            "regNo": "20023",
+            "regDate": "20/11/2024",
+            "plaintiff": "Pema Lhamo",
+            "cid": "10101004841",
+            "caseTitle": "Burglary",
+            "types": "Civil Case",
+            "bench": "Bench I",
+            "clerk": "Kinley Dorji",
+            "status": "Ongoing",
+            "nature": "Severe"
+        },
+        {
+            "id": "3",
+            "regNo": "20023",
+            "regDate": "20/11/2024",
+            "plaintiff": "Karma Dorji",
+            "cid": "10101004847",
+            "caseTitle": "Burglary",
+            "types": "Civil Case",
+            "bench": "Bench I",
+            "clerk": "Kinley Dorji",
+            "status": "Ongoing",
+            "nature": "Severe"
+        }
+    ],
+    "reminders": [
+        {
+            "id": "1",
+            "title": "Preliminary Hearing, Theft Case",
+            "date": "2:00 PM, 22nd Dec 2024"
+        },
+        {
+            "id": "2",
+            "title": "Preliminary Hearing, Theft Case",
+            "date": "2:00 PM, 22nd Dec 2024"
+        },
+        {
+            "id": "3",
+            "title": "Preliminary Hearing, Theft Case",
+            "date": "2:00 PM, 22nd Dec 2024"
+        },
+        {
+            "id": "4",
+            "title": "Preliminary Hearing, Theft Case",
+            "date": "2:00 PM, 22nd Dec 2024"
+        }
+    ],
+    "casereports": [
+        {
+            "month": "January",
+            "openingBalance": 1000,
+            "newRegistration": 200,
+            "totalRegistered": 1200,
+            "decidedCases": 150,
+            "pendingCases": 50,
+            "appeal": 10,
+            "remarks": 5,
+            "year": 2015,
+            "id": "c7ba"
+        },
+        {
+            "month": "March",
+            "openingBalance": 1200,
+            "newRegistration": 300,
+            "totalRegistered": 1500,
+            "decidedCases": 180,
+            "pendingCases": 70,
+            "appeal": 15,
+            "remarks": 4,
+            "year": 2015,
+            "id": "c0f9"
+        },
+        {
+            "month": "June",
+            "openingBalance": 1500,
+            "newRegistration": 250,
+            "totalRegistered": 1750,
+            "decidedCases": 200,
+            "pendingCases": 80,
+            "appeal": 12,
+            "remarks": 3,
+            "year": 2015,
+            "id": "707e"
+        },
+        {
+            "month": "September",
+            "openingBalance": 1750,
+            "newRegistration": 400,
+            "totalRegistered": 2150,
+            "decidedCases": 220,
+            "pendingCases": 90,
+            "appeal": 18,
+            "remarks": 6,
+            "year": 2015,
+            "id": "e7e0"
+        },
+        {
+            "month": "December",
+            "openingBalance": 2150,
+            "newRegistration": 350,
+            "totalRegistered": 2500,
+            "decidedCases": 300,
+            "pendingCases": 100,
+            "appeal": 25,
+            "remarks": 8,
+            "year": 2015,
+            "id": "2479"
+        }
+    ],
+    "case": [
+        {
+            "id": "C001",
+            "regDate": "2024-01-15",
+            "plaintiff": "John Doe",
+            "cidNo": "123456789",
+            "caseTitle": "Property Dispute",
+            "type": "Civil",
+            "category": "Land"
+        },
+        {
+            "id": "C002",
+            "regDate": "2024-02-10",
+            "plaintiff": "Jane Smith",
+            "cidNo": "987654321",
+            "caseTitle": "Contract Breach",
+            "type": "Civil",
+            "category": "Business"
+        },
+        {
+            "id": "C003",
+            "regDate": "2024-03-05",
+            "plaintiff": "Michael Johnson",
+            "cidNo": "456123789",
+            "caseTitle": "Assault Charges",
+            "type": "Criminal",
+            "category": "Violence"
+        },
+        {
+            "id": "C004",
+            "regDate": "2024-03-18",
+            "plaintiff": "Emily Davis",
+            "cidNo": "321654987",
+            "caseTitle": "Defamation Case",
+            "type": "Civil",
+            "category": "Media"
+        },
+        {
+            "id": "C005",
+            "regDate": "2024-04-02",
+            "plaintiff": "Robert Brown",
+            "cidNo": "741852963",
+            "caseTitle": "Bank Fraud",
+            "type": "Criminal",
+            "category": "Finance"
+        },
+        {
+            "id": "C006",
+            "regDate": "2024-04-10",
+            "plaintiff": "Sophia Wilson",
+            "cidNo": "369258147",
+            "caseTitle": "Tenant Dispute",
+            "type": "Civil",
+            "category": "Housing"
+        },
+        {
+            "id": "C007",
+            "regDate": "2024-05-01",
+            "plaintiff": "Daniel Martinez",
+            "cidNo": "852147963",
+            "caseTitle": "Tax Evasion",
+            "type": "Criminal",
+            "category": "Finance"
+        },
+        {
+            "id": "C008",
+            "regDate": "2024-05-15",
+            "plaintiff": "Olivia Anderson",
+            "cidNo": "963741258",
+            "caseTitle": "Inheritance Dispute",
+            "type": "Civil",
+            "category": "Family"
+        },
+        {
+            "id": "C009",
+            "regDate": "2024-06-01",
+            "plaintiff": "William Thomas",
+            "cidNo": "147852369",
+            "caseTitle": "Corporate Espionage",
+            "type": "Criminal",
+            "category": "Business"
+        },
+        {
+            "id": "C010",
+            "regDate": "2024-06-10",
+            "plaintiff": "Emma Scott",
+            "cidNo": "258369147",
+            "caseTitle": "Workplace Harassment",
+            "type": "Civil",
+            "category": "Employment"
+        }
+    ],
+    "cases": [
+        {
+            "regNo": 20020,
+            "regDate": "20/11/2024",
+            "plaintiff": "Karma Dorji",
+            "cidNo": "1010104841",
+            "caseTitle": "Divorce",
+            "types": "Civil Case",
+            "bench": "Bench I",
+            "benchClerk": "Kinley Dorji",
+            "status": "Active",
+            "nature": "Severe"
+        },
+        {
+            "regNo": 20021,
+            "regDate": "20/11/2024",
+            "plaintiff": "Sonam Wangdi",
+            "cidNo": "1010104842",
+            "caseTitle": "Murder Case",
+            "types": "Criminal Case",
+            "bench": "Bench II",
+            "benchClerk": "Tashi Wangmo",
+            "status": "Urgent",
+            "nature": "Severe"
+        },
+        {
+            "regNo": 20022,
+            "regDate": "20/11/2024",
+            "plaintiff": "Dorji Namgay",
+            "cidNo": "1010104843",
+            "caseTitle": "Property Dispute",
+            "types": "Civil Case",
+            "bench": "Bench I",
+            "benchClerk": "Pema Tshering",
+            "status": "Enforcement",
+            "nature": "Moderate"
+        }
+    ],
+    "courts": [
+        {
+            "id": "1",
+            "title": "Supreme Court",
+            "count": 1,
+            "percentage": "16%"
+        },
+        {
+            "id": "2",
+            "title": "High Court",
+            "count": 1,
+            "percentage": "16%"
+        },
+        {
+            "id": "3",
+            "title": "Dzongkha Court",
+            "count": 20,
+            "percentage": "16%"
+        },
+        {
+            "id": "4",
+            "title": "Dungkhag Court",
+            "count": 16,
+            "percentage": "16%"
+        }
+    ],
+    "courtstable": [
+        {
+            "id": "021",
+            "name": "Phuntsholing Court",
+            "type": "Dungkhag",
+            "parent_court_id": "001",
+            "contact_no": "17813106",
+            "email": "phuntsholingcourt@gmail.com",
+            "sub_domain": "phuntsholing"
+        }
+    ],
+    "registrartable": [
+        {
+            "id": "1",
+            "name": "Karma Kelvin",
+            "cidNo": "10101004841",
+            "email": "pemadorji@gmail.com",
+            "password": "123456789",
+            "courtName": "Bumthang",
+            "contactNo": "17813106",
+            "gender": "Male"
+        },
+        {
+            "id": "2",
+            "name": "Karma Kelvin",
+            "cidNo": "10101004841",
+            "email": "pemadorji@gmail.com",
+            "password": "123456789",
+            "courtName": "Bumthang",
+            "contactNo": "17813106",
+            "gender": "Male"
+        },
+        {
+            "id": "3",
+            "name": "Karma Kelvin",
+            "cidNo": "10101004841",
+            "email": "pemadorji@gmail.com",
+            "password": "123456789",
+            "courtName": "Bumthang",
+            "contactNo": "17813106",
+            "gender": "Male"
+        }
+    ],
+    "judgetable": [
+        {
+            "id": "001",
+            "name": "Pema Dorji",
+            "cidNo": "10101004841",
+            "email": "pemadorji@gmail.com",
+            "password": "123456789",
+            "courtName": "Phuentsholing Court",
+            "contactNo": "178131006",
+            "gender": "Male"
+        }
+    ],
+    "clerkstable": [
+        {
+            "id": "1",
+            "name": "20021",
+            "cidNo": "Karma Dorji",
+            "email": "pemadorji@gmail.com",
+            "password": "123456789",
+            "courtName": "High Court",
+            "contactNo": "17813106",
+            "gender": "10101004841"
+        },
+        {
+            "id": "2",
+            "name": "20021",
+            "cidNo": "Karma Dorji",
+            "email": "pemadorji@gmail.com",
+            "password": "123456789",
+            "courtName": "High Court",
+            "contactNo": "17849779",
+            "gender": "10101004841"
+        },
+        {
+            "id": "3",
+            "name": "20021",
+            "cidNo": "Karma Dorji",
+            "email": "pemadorji@gmail.com",
+            "password": "123456789",
+            "courtName": "High Court",
+            "contactNo": "77649779",
+            "gender": "10101004841"
+        }
+    ]
+}
