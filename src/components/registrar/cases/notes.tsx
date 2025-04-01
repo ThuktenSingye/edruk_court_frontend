@@ -23,37 +23,10 @@ export const Notes = () => {
 
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editText, setEditText] = useState("");
-    const [newNoteText, setNewNoteText] = useState("");
-    const [isAddNoteOpen, setIsAddNoteOpen] = useState(false);
 
-    // ✅ Handle Edit
-    const handleEdit = (id: number, text: string) => {
-        setEditingId(id);
-        setEditText(text);
-    };
-
-    // ✅ Handle Save
     const handleSave = (id: number) => {
         setNotes(notes.map(note => (note.id === id ? { ...note, text: editText } : note)));
         setEditingId(null);
-    };
-
-    // ✅ Handle Delete
-    const handleDelete = (id: number) => {
-        setNotes(notes.filter(note => note.id !== id));
-    };
-
-    // ✅ Handle Add New Note
-    const handleAddNote = () => {
-        if (newNoteText.trim() === "") return;
-        const newNote: Note = {
-            id: Date.now(),
-            text: newNoteText,
-            date: new Date().toLocaleString(), // ✅ Automatically saves the exact date & time when added
-        };
-        setNotes([...notes, newNote]);
-        setNewNoteText("");
-        setIsAddNoteOpen(false);
     };
 
     return (
@@ -79,40 +52,9 @@ export const Notes = () => {
                                 <span className="text-xs text-gray-500">{note.date}</span>
                             </div>
                         )}
-
-                        <div className="flex gap-2">
-                            {editingId !== note.id && (
-                                <button onClick={() => handleEdit(note.id, note.text)} className="p-2 hover:bg-gray-200 rounded-full">
-                                    <EditIcon />
-                                </button>
-                            )}
-                            <button onClick={() => handleDelete(note.id)} className="p-2 hover:bg-gray-200 rounded-full">
-                                <DeleteIcon />
-                            </button>
-                        </div>
                     </div>
                 ))}
             </div>
-
-            {/* ✅ Add New Note Modal */}
-            <Dialog open={isAddNoteOpen} onOpenChange={setIsAddNoteOpen}>
-                <DialogTrigger asChild>
-                    <Button className="mt-4 w-1/4 bg-green-600 text-white flex items-center gap-1">
-                        <PlusIcon /> Add Note
-                    </Button>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Add New Note</DialogTitle>
-                    </DialogHeader>
-                    <Input
-                        placeholder="Enter note..."
-                        value={newNoteText}
-                        onChange={(e) => setNewNoteText(e.target.value)}
-                    />
-                    <Button onClick={handleAddNote} className="bg-green-600 text-white w-full mt-4">Save Note</Button>
-                </DialogContent>
-            </Dialog>
         </Card>
     );
 };

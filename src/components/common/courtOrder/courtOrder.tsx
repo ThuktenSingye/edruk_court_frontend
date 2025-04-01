@@ -1,18 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { SendToModal } from "@/components/common/courtOrder/SendToModal";
-import { Pagination } from "@/components/common/pagination";
 import FileUploader from "@/components/common/courtOrder/fileUploader";
-
+import { Documents } from "@/components/common/courtOrder/documentCourtOrder";
+import { CourtOrdersReceived } from "@/components/common/courtOrder/CourtOrderReceived";
+import { Pagination } from "@/components/common/pagination";
 import {
     Table,
-    TableBody,
-    TableCell,
-    TableHead,
     TableHeader,
+    TableBody,
+    TableHead,
     TableRow,
+    TableCell,
 } from "@/components/ui/table";
 
 type CourtOrder = {
@@ -21,6 +22,7 @@ type CourtOrder = {
     date: string;
     courtId: string;
     status: string;
+    receiverId?: string;
 };
 
 export const CourtOrder = () => {
@@ -41,18 +43,18 @@ export const CourtOrder = () => {
             .catch((error) => console.error("Error fetching court orders:", error));
     }, []);
 
-    // ✅ Handle sending files to court
     const handleSendToCourt = async (data: { court: string; user: string }) => {
         setSelectedCourt(data.court);
         setSelectedUser(data.user);
 
-        if (pendingFiles.length === 0) return; // No files to send
+        if (pendingFiles.length === 0) return;
 
         const newOrders = pendingFiles.map((file) => ({
             id: Math.random().toString(36).substring(2, 6),
             document: file.name,
             date: new Date().toISOString().split("T")[0],
             courtId: data.court,
+            receiverId: data.user,
             status: "Pending",
         }));
 
@@ -67,14 +69,13 @@ export const CourtOrder = () => {
 
             await Promise.all(promises);
             setCourtOrders((prev) => [...prev, ...newOrders]);
-            setPendingFiles([]); // Clear pending files
-            setModalOpen(false); // Close modal
+            setPendingFiles([]);
+            setModalOpen(false);
         } catch (error) {
             console.error("Error sending court orders:", error);
         }
     };
 
-    // ✅ Handle file uploads (Drag & Drop + Manual Upload)
     const handleFilesUploaded = (files: File[]) => {
         setPendingFiles((prev) => [...prev, ...files]);
     };
@@ -83,7 +84,6 @@ export const CourtOrder = () => {
         order.document.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const totalPages = Math.ceil(filteredOrders.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
     const paginatedOrders = filteredOrders.slice(startIndex, startIndex + rowsPerPage);
 
@@ -92,19 +92,16 @@ export const CourtOrder = () => {
             <p className="text-black text-lg">Court Order</p>
 
             <div className="w-full bg-white border border-gray-300 shadow-lg rounded-lg p-6 text-green-600">
+                {/* Attach + Send Modal */}
                 <div className="flex items-center justify-between">
                     <p className="text-black text-lg">Attach File</p>
-                    <SendToModal
-                        open={modalOpen}
-                        onOpenChange={setModalOpen}
-                        onSend={handleSendToCourt} // ✅ Fixed the missing function
-                    />
+                    <SendToModal open={modalOpen} onOpenChange={setModalOpen} onSend={handleSendToCourt} />
                 </div>
 
-                {/* ✅ File Uploader Component (Drag & Drop + Upload Manually) */}
+                {/* File uploader */}
                 <FileUploader onFilesUploaded={handleFilesUploaded} />
 
-                {/* ✅ Pending Files List */}
+                {/* Pending files list */}
                 <div className="mt-4">
                     <p className="text-black font-semibold">Pending Files:</p>
                     {pendingFiles.length > 0 ? (
@@ -114,7 +111,9 @@ export const CourtOrder = () => {
                                     <span>{file.name}</span>
                                     <button
                                         className="ml-4 text-red-600 hover:underline"
-                                        onClick={() => setPendingFiles((prev) => prev.filter((_, i) => i !== index))}
+                                        onClick={() =>
+                                            setPendingFiles((prev) => prev.filter((_, i) => i !== index))
+                                        }
                                     >
                                         Remove
                                     </button>
@@ -126,9 +125,9 @@ export const CourtOrder = () => {
                     )}
                 </div>
 
-                {/* ✅ Court Orders Table */}
-                <div className="mt-6">
-                    <div className="flex flex-col md:flex-row items-center justify-between p-4 bg-white shadow-md">
+                {/* Court Orders Sent */}
+                <div className="mt-6 border border-gray-300 rounded-md shadow-md">
+                    <div className="flex flex-col md:flex-row items-center justify-between p-4 bg-white">
                         <h2 className="font-semibold text-gray-900 text-lg">List of Court Orders Sent</h2>
                         <Input
                             placeholder="Search Document Name"
@@ -139,7 +138,7 @@ export const CourtOrder = () => {
                     </div>
 
                     <Table>
-                        <TableHeader className="bg-primary-normal text-white">
+                        <TableHeader>
                             <TableRow>
                                 <TableHead>SL.NO</TableHead>
                                 <TableHead>Order Document</TableHead>
@@ -150,12 +149,12 @@ export const CourtOrder = () => {
                         </TableHeader>
                         <TableBody>
                             {paginatedOrders.map((order, index) => (
-                                <TableRow key={order.id} className="hover:bg-gray-100 text-black">
+                                <TableRow key={order.id} className="text-textPrimary">
                                     <TableCell>{startIndex + index + 1}</TableCell>
                                     <TableCell>{order.document}</TableCell>
                                     <TableCell>{order.date}</TableCell>
                                     <TableCell>{order.courtId}</TableCell>
-                                    <TableCell>{order.status}</TableCell>
+                                    <TableCell className="text-[#EF3826]" >{order.status}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -168,6 +167,11 @@ export const CourtOrder = () => {
                         currentPage={currentPage}
                         setCurrentPage={setCurrentPage}
                     />
+                </div>
+
+                {/* Court Orders Received Section (Dummy for now) */}
+                <div className="mt-6">
+                    <CourtOrdersReceived />
                 </div>
             </div>
         </div>

@@ -3,13 +3,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 @layer base {
   :root {
     --radius: 0.5rem;
   }
+
   * {
     @apply box-border;
   }
+
   body {
     @apply antialiased bg-background text-sm md:text-base font-body;
   }

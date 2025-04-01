@@ -39,14 +39,14 @@ export default function WitnessPage() {
         houseNo: "NO",
         thramNo: "NO",
         age: "This is case summary and all.",
-        gender: "This is case summary and all.",
+        gender: "Male", // Default value for gender
         presentAddress: { village: "17289389", gewog: "17289389", dzongkhag: "17289389" },
         permanentAddress: { village: "17289389", gewog: "17289389", dzongkhag: "17289389" },
     });
 
     const handleEditToggle = () => {
         if (isEditing) {
-            alert("Saved Successfully!");
+            alert("Saved Successfully!"); // Show alert when saving
         }
         setIsEditing(!isEditing);
     };
@@ -67,23 +67,43 @@ export default function WitnessPage() {
             <div className="w-full max-w-6xl border border-textPrimary rounded-lg p-12 flex flex-col sm:w-full md:w-4/5 lg:w-3/4 xl:w-2/3">
                 <div className="flex justify-between mb-6">
                     <h2 className="text-xl font-semibold pl-4">Witness Profile</h2>
-                    <Button className="bg-green-600 text-white flex items-center" onClick={handleEditToggle}>
+                    <Button
+                        className="bg-primary-normal text-white flex items-center hover:bg-primary-light transition-all duration-300 ease-in-out"
+                        onClick={handleEditToggle}
+                    >
                         <Pencil size={16} className="mr-1" />
                         {isEditing ? "Save" : "Edit"}
                     </Button>
                 </div>
 
                 <div className="flex flex-col sm:flex-col md:flex-row lg:flex-row xl:flex-row gap-6 mb-6">
-                    <div className="p-6 bg-white rounded-lg flex-1">
+                    {/* General Information Section (Card for general info) */}
+                    <div
+                        className="p-6 bg-white shadow-md rounded-lg flex-1 hover:shadow-2xl hover:bg-gray-50 transition-all duration-300 ease-in-out"
+                    >
                         {Object.entries(profile)
                             .filter(([key]) => key !== "presentAddress" && key !== "permanentAddress" && key !== "id")
                             .map(([key, value]) => (
                                 <div key={key} className="mb-3 flex flex-col">
                                     <p className="font-semibold capitalize">{key.replace(/([A-Z])/g, " $1")}: </p>
-                                    {isEditing ? (
+                                    {key === "gender" ? ( // Dropdown for gender field
+                                        isEditing ? (
+                                            <select
+                                                className="border p-1 rounded text-gray-800"
+                                                value={value}
+                                                onChange={(e) => handleInputChange(key, e.target.value)}
+                                            >
+                                                <option value="Male">Male</option>
+                                                <option value="Female">Female</option>
+                                                <option value="Other">Other</option>
+                                            </select>
+                                        ) : (
+                                            <p className="text-gray-700">{value}</p>
+                                        )
+                                    ) : isEditing ? (
                                         <input
                                             type="text"
-                                            className="border p-2 rounded text-gray-800"
+                                            className="border p-1 rounded text-gray-800"
                                             value={value}
                                             onChange={(e) => handleInputChange(key, e.target.value)}
                                         />
@@ -96,7 +116,9 @@ export default function WitnessPage() {
 
                     <div className="space-y-4 flex-1">
                         {/* Present Address Section */}
-                        <div className="bg-white shadow-md rounded-lg p-6 border flex flex-col">
+                        <div
+                            className="bg-white shadow-md rounded-lg p-6 border flex flex-col hover:shadow-2xl hover:bg-gray-50 transition-all duration-300 ease-in-out"
+                        >
                             <p className="font-bold text-green-600">Present Address</p>
                             {Object.entries(profile.presentAddress).map(([subKey, subValue]) => (
                                 <div key={subKey} className="mb-2 flex flex-col">
@@ -104,7 +126,7 @@ export default function WitnessPage() {
                                     {isEditing ? (
                                         <input
                                             type="text"
-                                            className="border p-2 rounded text-gray-800"
+                                            className="border p-1 rounded text-gray-800"
                                             value={subValue}
                                             onChange={(e) => handleAddressChange("presentAddress", subKey, e.target.value)}
                                         />
@@ -116,7 +138,9 @@ export default function WitnessPage() {
                         </div>
 
                         {/* Permanent Address Section */}
-                        <div className="bg-white shadow-md rounded-lg p-6 border flex flex-col">
+                        <div
+                            className="bg-white shadow-md rounded-lg p-6 border flex flex-col hover:shadow-2xl hover:bg-gray-50 transition-all duration-300 ease-in-out"
+                        >
                             <p className="font-bold text-green-600">Permanent Address</p>
                             {Object.entries(profile.permanentAddress).map(([subKey, subValue]) => (
                                 <div key={subKey} className="mb-2 flex flex-col">
@@ -124,7 +148,7 @@ export default function WitnessPage() {
                                     {isEditing ? (
                                         <input
                                             type="text"
-                                            className="border p-2 rounded text-gray-800"
+                                            className="border p-1 rounded text-gray-800"
                                             value={subValue}
                                             onChange={(e) => handleAddressChange("permanentAddress", subKey, e.target.value)}
                                         />

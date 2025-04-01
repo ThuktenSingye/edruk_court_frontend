@@ -1,8 +1,8 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { CustomCard, CustomCardContent } from "../CustomCardComponents";
 import { ArrowUpRight, Users, Scale, Gavel, Briefcase, ShieldCheck, FileText } from "lucide-react";
-import useFetch from "../../../app/hooks/usefetchDashboard";
+import { useLoginStore } from "@/app/hooks/useLoginStore"; // Import your auth store
 
 const iconMap: Record<string, React.ElementType> = {
     "Total Cases": Scale,
@@ -13,15 +13,69 @@ const iconMap: Record<string, React.ElementType> = {
     "Appealed Cases": FileText,
 };
 
-interface CaseStat {
-    id: number;
-    title: string;
-    count: string;
-    growth: string;
-}
-
 const CaseStatistics = () => {
-    const { data: caseData } = useFetch<CaseStat[]>("http://localhost:3002/caseStatistics", []);
+    const { token } = useLoginStore(); // Get token from auth store
+    const [caseData, setCaseData] = useState({
+        total: 0,
+        civil: 0,
+        criminal: 0,
+        others: 0,
+        active: 0,
+        decided: 0,
+        appeal: 0
+    });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchCaseData = async () => {
+            if (!token) { // Check if token exists
+                setError("Authentication required");
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const response = await fetch("http://nganglam.lvh.me:3001/api/v1/cases/statistics", {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}` // Use dynamic token
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                setCaseData(result.data.data.attributes);
+            } catch (err) {
+                setError((err as Error).message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCaseData();
+    }, [token]); // Add token as dependency
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex justify-center items-center">
+                <p className="text-lg">Loading...</p>
+            </div>
+        );
+    }
+    if (error) return <p>Error: {error}</p>;
+
+    const formattedData = [
+        { title: "Total Cases", count: caseData.total, growth: "N/A" },
+        { title: "Civil Case", count: caseData.civil, growth: "N/A" },
+        { title: "Criminal Cases", count: caseData.criminal, growth: "N/A" },
+        { title: "Pending Cases", count: caseData.active, growth: "N/A" },
+        { title: "Resolved Cases", count: caseData.decided, growth: "N/A" },
+        { title: "Appealed Cases", count: caseData.appeal, growth: "N/A" }
+    ];
 
     return (
         <div className="flex flex-col gap-y-0 w-full self-start max-w-[90%] md:max-w-5xl">
@@ -29,26 +83,22 @@ const CaseStatistics = () => {
                 Case Statistics
             </h2>
 
-            {/* Large screen layout */}
             <div className="hidden md:flex flex-col gap-y-0 w-full max-w-[90%] md:max-w-5xl">
-                {caseData.length > 0 &&
-                    [caseData.slice(0, 3), caseData.slice(3, 6)].map((group, i) => (
+                {formattedData.length > 0 &&
+                    [formattedData.slice(0, 3), formattedData.slice(3, 6)].map((group, i) => (
                         <CustomCard key={i} className="bg-white shadow-md rounded-lg p-2 md:p-4 w-full">
                             <CustomCardContent className="flex flex-row mr-15 justify-around items-center">
                                 {group.map((data, index) => {
                                     const IconComponent = iconMap[data.title];
                                     return (
                                         <div
-                                            key={data.id}
-                                            className={`flex items-center flex-1 px-4 md:px-4 ${index !== group.length - 1 ? "border-r border-gray-300" : ""
-                                                }`}
+                                            key={data.title}
+                                            className={`flex items-center flex-1 px-4 md:px-4 ${index !== group.length - 1 ? "border-r border-gray-300" : ""}`}
                                         >
-                                            {/* Green Circular Icon */}
                                             <div className="flex items-center justify-center bg-green-800 text-white p-3 md:p-4 rounded-full w-14 h-14 md:w-16 md:h-16">
                                                 {IconComponent && <IconComponent className="w-7 h-7 md:w-8 md:h-8" />}
                                             </div>
 
-                                            {/* Text Content */}
                                             <div className="ml-9 md:ml-4">
                                                 <div className="font-body text-primary text-sm md:text-sm">
                                                     {data.title}
@@ -67,19 +117,16 @@ const CaseStatistics = () => {
                     ))}
             </div>
 
-            {/* Small screen layout */}
             <div className="flex md:hidden flex-col gap-y-3 w-full max-w-[90%]">
-                {caseData.map((data) => {
+                {formattedData.map((data) => {
                     const IconComponent = iconMap[data.title];
                     return (
-                        <CustomCard key={data.id} className="bg-white shadow-md rounded-lg p-4 w-full">
+                        <CustomCard key={data.title} className="bg-white shadow-md rounded-lg p-4 w-full">
                             <CustomCardContent className="flex items-center gap-x-4">
-                                {/* Green Circular Icon */}
                                 <div className="flex items-center justify-center bg-green-800 text-white p-3 rounded-full w-14 h-14">
                                     {IconComponent && <IconComponent className="w-7 h-7" />}
                                 </div>
 
-                                {/* Text Content */}
                                 <div>
                                     <div className="text-gray-700 font-body text-sm">{data.title}</div>
                                     <div className="text-lg font-semibold">{data.count}</div>
