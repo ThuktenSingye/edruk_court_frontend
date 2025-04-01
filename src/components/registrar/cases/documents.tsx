@@ -28,30 +28,6 @@ export const Documents = () => {
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
     const [openDialog, setOpenDialog] = useState<boolean>(false);
 
-    // ✅ Delete a document
-    const handleDelete = (index: number) => {
-        setDocuments((prevDocs) => prevDocs.filter((_, i) => i !== index));
-    };
-
-    // ✅ Verify a document
-    const verifyDocument = () => {
-        if (selectedIndex !== null) {
-            setDocuments((prevDocs) =>
-                prevDocs.map((doc, i) =>
-                    i === selectedIndex ? { ...doc, verified: true } : doc
-                )
-            );
-        }
-        resetViewer();
-    };
-
-    // ✅ Reset Viewer State
-    const resetViewer = () => {
-        setSelectedFile(null);
-        setSelectedIndex(null);
-        setOpenDialog(false); // Close the dialog
-    };
-
     return (
         <Card className="p-4 border border-gray-300">
             <div className="flex justify-between items-center">
@@ -66,12 +42,12 @@ export const Documents = () => {
                 {documents.length > 0 ? (
                     documents.map((doc, index) => (
                         <div key={index} className="flex items-center justify-between bg-gray-100 p-3 rounded-md shadow-md">
-                            {/* ✅ File Icon & Name */}
+
                             <span className="flex items-center gap-2">
                                 <FolderIcon /> {doc.fileName}
                             </span>
 
-                            {/* ✅ Actions (Eye, Delete, Verify) */}
+
                             <div className="flex items-center gap-4">
                                 {/* ✅ Open dialog only if file is valid */}
                                 <Dialog open={openDialog} onOpenChange={setOpenDialog}>
@@ -109,35 +85,8 @@ export const Documents = () => {
                                         ) : (
                                             <p className="text-gray-500">No document available.</p>
                                         )}
-
-                                        {/* ✅ Sign and Verify & Close Buttons */}
-                                        <div className="flex justify-end mt-4 gap-4">
-                                            {!doc.verified && (
-                                                <Button
-                                                    variant="outline"
-                                                    onClick={verifyDocument}
-                                                    className="bg-primary-normal text-white"
-                                                >
-                                                    Sign and Verify
-                                                </Button>
-                                            )}
-                                            <DialogClose asChild>
-                                                <Button variant="default" onClick={resetViewer}>
-                                                    Close
-                                                </Button>
-                                            </DialogClose>
-                                        </div>
                                     </DialogContent>
                                 </Dialog>
-
-                                {/* ✅ Delete Button */}
-                                <Button
-                                    variant="ghost"
-                                    onClick={() => handleDelete(index)}
-                                    className="p-2 hover:bg-gray-200 rounded-full"
-                                >
-                                    <DeleteIcon />
-                                </Button>
                             </div>
                         </div>
                     ))

@@ -24,32 +24,28 @@ export const FileUpload: FC<FileUploadProps> = ({ onFilesUploaded }) => {
     };
 
     return (
-        <Card className="p-4 border border-gray-300">
-            <div className="flex justify-center mt-4">
-                {/* ✅ Drag and Drop Functional */}
-                <div
-                    className="w-full p-4 mr-2 border border-gray-300 rounded-lg bg-white flex justify-center shadow-md cursor-pointer"
-                    onDrop={handleDrop}
-                    onDragOver={(e) => e.preventDefault()}
-                >
-                    <p className="text-primary-normal">Drag and Drop</p>
-                </div>
-
-                {/* ✅ Upload Manually Functional */}
-                <label
-                    htmlFor="fileUpload"
-                    className="w-full p-4 ml-2 border border-gray-300 rounded-lg bg-white flex justify-center shadow-md cursor-pointer"
-                >
-                    <p className="text-primary-normal">Upload Manually</p>
-                    <input
-                        type="file"
-                        id="fileUpload"
-                        className="hidden"
-                        multiple
-                        onChange={handleFileUpload}
-                    />
-                </label>
+        <div className="flex justify-center mt-4">
+            <div
+                className="w-full p-4 mr-2 border border-gray-300 rounded-lg bg-white flex justify-center shadow-md cursor-pointer"
+                onDrop={handleDrop}
+                onDragOver={(e) => e.preventDefault()}
+            >
+                <p className="text-primary-normal">Drag and Drop</p>
             </div>
-        </Card>
+
+            <label
+                htmlFor="fileUpload"
+                className="w-full p-4 ml-2 border border-gray-300 rounded-lg bg-white flex justify-center shadow-md cursor-pointer"
+            >
+                <p className="text-primary-normal">Upload Manually</p>
+                <input
+                    type="file"
+                    id="fileUpload"
+                    className="hidden"
+                    multiple
+                    onChange={handleFileUpload}
+                />
+            </label>
+        </div>
     );
 };

@@ -60,7 +60,7 @@ export const Notes = () => {
         <Card className="p-4 border border-gray-300">
             <h3 className="text-primary-normal text-lg font-semibold">NOTE</h3>
 
-            <div className="space-y-2 mt-2">
+            <div className="space-y-2 mt-5">
                 {notes.map((note) => (
                     <div key={note.id} className="flex items-center justify-between bg-gray-100 p-3 rounded-md shadow-md">
                         {editingId === note.id ? (
@@ -97,13 +97,16 @@ export const Notes = () => {
             {/* ✅ Add New Note Modal */}
             <Dialog open={isAddNoteOpen} onOpenChange={setIsAddNoteOpen}>
                 <DialogTrigger asChild>
-                    <Button className="mt-4 w-1/4 bg-green-600 text-white flex items-center gap-1">
-                        <PlusIcon /> Add Note
-                    </Button>
+                    <div className="relative">
+                        <Button className="absolute top-0 right-0 -mt-[200px] w-1/4 bg-green-600 text-white flex items-center gap-1">
+                            <PlusIcon /> Add Note
+                        </Button>
+                    </div>
+
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Add New Note</DialogTitle>
+                        <DialogTitle >Add New Note</DialogTitle>
                     </DialogHeader>
                     <Input
                         placeholder="Enter note..."

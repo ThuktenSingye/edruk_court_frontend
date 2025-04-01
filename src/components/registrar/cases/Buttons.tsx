@@ -6,12 +6,15 @@ import { File, Lock } from "lucide-react";
 import CaseInfo from "@/components/registrar/cases/CaseInfo";
 import Plaintiff from "@/components/registrar/cases/plantiff";
 import Witness from "@/components/registrar/cases/witness";
-import Proceeding from "@/components/registrar/cases/proceeding";
+import ProceedingJudge from "@/components/judge/cases/proceeding";
 import MislleaneousHearing from "@/components/registrar/cases/mislleaneousHearing";
-
+import ProceedingRegistrar from "@/components/registrar/cases/proceeding";
+import CaseDocs from "@/components/registrar/cases/CaseDocs";
+import { useLoginStore } from "@/app/hooks/useLoginStore";
 
 export default function ProfileButtons() {
     const [activeSection, setActiveSection] = useState("caseInfo");
+    const userRole = useLoginStore((state) => state.userRole);
 
     return (
         <div>
@@ -65,15 +68,29 @@ export default function ProfileButtons() {
                     <Lock className="h-4 w-4" />
                     Witness
                 </Button>
+
+                <Button
+                    className={`w-32 flex items-center gap-2 ${activeSection === "casedocs" ? "bg-primary-normal" : "bg-gray-300"
+                        } text-white`}
+                    onClick={() => setActiveSection("casedocs")}
+                >
+                    <Lock className="h-4 w-4" />
+                    Case Docs
+                </Button>
             </div>
 
             {/* Section Content */}
             <div className="p-4">
                 {activeSection === "caseInfo" && <CaseInfo />}
-                {activeSection === "proceeding" && <Proceeding />}
+
+                {activeSection === "proceeding" && userRole === "Registrar" && <ProceedingRegistrar />}
+                {activeSection === "proceeding" && (userRole === "Judge" || userRole === "Clerk") && <ProceedingJudge />}
+
                 {activeSection === "plaintiff" && <Plaintiff />}
                 {activeSection === "witness" && <Witness />}
                 {activeSection === "mislleaneousHearing" && <MislleaneousHearing />}
+                {activeSection === "casedocs" && <CaseDocs />}
+
             </div>
         </div>
     );

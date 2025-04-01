@@ -22,7 +22,7 @@ export default function ReminderSection() {
 
     return (
         <div className="p-4 bg-white rounded-lg shadow-md space-y-4 mt-6 
-        w-[308px] ml-[30px] h-[306px]
+        w-[308px] ml-[30px] h-[267px]
         sm:w-[485px] sm:ml-[20px] sm:mr-0  
         md:w-[700px] md:ml-[60px] md:mr-4  
         lg:w-[400px] lg:ml-[40px] lg:mr-4 lg:mt-10">
@@ -37,7 +37,7 @@ export default function ReminderSection() {
             </div>
 
             {/* Reminder List */}
-            <div className="min-h-[195px] max-h-[215px] overflow-y-auto space-y-3 w-full">
+            <div className="min-h-[195px] max-h-[192px] overflow-y-auto space-y-3 w-full">
                 {loading ? (
                     <div className="flex items-center justify-center h-full text-gray-500 text-sm font-medium">
                         Loading...

@@ -8,6 +8,7 @@ import { DeleteIcon } from "@/components/ui/deleteIcon";
 import { EyeIcon } from "@/components/ui/eyeIcon";
 import { FolderIcon } from "@/components/ui/folderIcon";
 import { CheckCircleIcon } from "@/components/ui/checkCircleIcon";
+import { FileUpload } from "@/components/judge/cases/fileUpload";
 
 interface Document {
     fileName: string;
@@ -27,13 +28,12 @@ export const Documents = () => {
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
     const [openDialog, setOpenDialog] = useState<boolean>(false);
+    const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
-    // ✅ Delete a document
     const handleDelete = (index: number) => {
         setDocuments((prevDocs) => prevDocs.filter((_, i) => i !== index));
     };
 
-    // ✅ Verify a document
     const verifyDocument = () => {
         if (selectedIndex !== null) {
             setDocuments((prevDocs) =>
@@ -45,11 +45,15 @@ export const Documents = () => {
         resetViewer();
     };
 
-    // ✅ Reset Viewer State
+    const handleFilesUploaded = (files: File[]) => {
+        setUploadedFiles((prev) => [...prev, ...files]);
+        console.log("Files uploaded:", files);
+    };
+
     const resetViewer = () => {
         setSelectedFile(null);
         setSelectedIndex(null);
-        setOpenDialog(false); // Close the dialog
+        setOpenDialog(false);
     };
 
     return (
@@ -71,7 +75,6 @@ export const Documents = () => {
                                 <FolderIcon /> {doc.fileName}
                             </span>
 
-                            {/* ✅ Actions (Eye, Delete, Verify) */}
                             <div className="flex items-center gap-4">
                                 {/* ✅ Open dialog only if file is valid */}
                                 <Dialog open={openDialog} onOpenChange={setOpenDialog}>
@@ -130,7 +133,6 @@ export const Documents = () => {
                                     </DialogContent>
                                 </Dialog>
 
-                                {/* ✅ Delete Button */}
                                 <Button
                                     variant="ghost"
                                     onClick={() => handleDelete(index)}
@@ -144,6 +146,23 @@ export const Documents = () => {
                 ) : (
                     <p className="text-gray-500 text-center">No documents available.</p>
                 )}
+
+                {/* ✅ File Upload */}
+                <FileUpload onFilesUploaded={handleFilesUploaded} />
+
+                {/* ✅ Uploaded Files List */}
+                <div>
+                    <h3 className="text-lg font-semibold">Uploaded Files:</h3>
+                    {uploadedFiles.length > 0 ? (
+                        <ul className="list-disc ml-5">
+                            {uploadedFiles.map((file, index) => (
+                                <li key={index} className="text-gray-700">{file.name}</li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-gray-500">No files uploaded.</p>
+                    )}
+                </div>
             </div>
         </Card>
     );

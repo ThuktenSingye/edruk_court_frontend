@@ -5,7 +5,7 @@ import React from "react";
 interface StepperProps {
     currentStep: number;
     totalSteps: number;
-    onStepClickAction: (step: number) => void; // Renamed from onStepClick
+    onStepClickAction: (step: number) => void;
 }
 
 export default function Stepper({ currentStep, totalSteps, onStepClickAction }: StepperProps) {
@@ -17,7 +17,7 @@ export default function Stepper({ currentStep, totalSteps, onStepClickAction }: 
                         className={`w-6 h-6 rounded-full cursor-pointer 
               ${index === currentStep ? "bg-green-600" : "bg-gray-500"}
             `}
-                        onClick={() => onStepClickAction(index)} // Updated function name
+                        onClick={() => onStepClickAction(index)}
                     />
                     {index < totalSteps - 1 && <div className="w-12 h-1 bg-gray-500" />}
                 </div>

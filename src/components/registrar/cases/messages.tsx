@@ -1,15 +1,23 @@
 import { Card } from "@/components/ui/card";
-import { Documents } from "./documents";
+
+const messages = [
+    { id: 1, text: "New update available", sender: "Admin" },
+    { id: 2, text: "Your request has been approved", sender: "Support" },
+    { id: 3, text: "Meeting scheduled for tomorrow", sender: "Manager" },
+];
+
 export const Messages = () => {
     return (
-        <Card className="p-4 border border-gray-300">
-            <div className="flex justify-between items-center">
-                <h3 className="text-primary-normal text-lg font-semibold">Messages</h3>
-                <button className="text-primary-normal">View More</button>
+        <Card className="p-4 shadow-md rounded-xl">
+            <h3 className="text-green-700 text-lg font-bold mb-3">MESSAGES</h3>
+            <div className="space-y-2">
+                {messages.map((msg) => (
+                    <div key={msg.id} className="p-3 bg-gray-100 rounded-lg">
+                        <p className="text-sm font-semibold">{msg.sender}</p>
+                        <p className="text-sm text-gray-700">{msg.text}</p>
+                    </div>
+                ))}
             </div>
-            <p className="text-sm text-gray-600 mt-2">Description of the message ......</p>
-            <Documents />
         </Card>
     );
 };
-

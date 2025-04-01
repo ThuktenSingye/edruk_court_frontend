@@ -2,10 +2,14 @@
 import { SetStateAction, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Trash2, Eye, PlusCircle, Calendar, Pencil, Upload } from "lucide-react";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogFooter, DialogContent, DialogHeader, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { RebutalNotes } from "@/components/judge/cases/RebutalNotes";
+import { RebutalMessages } from "@/components/judge/cases/RebutalMessage";
+
 
 interface FileData {
     id: number;
@@ -25,8 +29,19 @@ interface Schedule {
     text: string;
     timestamp: string;
 }
+interface RebuttalSectionProps {
+    onProceed: () => void;
+}
 
-export default function RebuttalSection() {
+interface RebuttalSectionProps {
+    onProceed: () => void;
+    title: string; // Add title prop
+}
+
+export default function RebuttalSection({ onProceed, title }: RebuttalSectionProps) {
+    const [hearingDate, setHearingDate] = useState("");
+    const [hearingTime, setHearingTime] = useState("");
+    const [hearingDetails, setHearingDetails] = useState("");
     const [plaintiffFiles, setPlaintiffFiles] = useState<FileData[]>([]);
     const [defendantFiles, setDefendantFiles] = useState<FileData[]>([]);
     const [notes, setNotes] = useState<Note[]>([]);
@@ -38,7 +53,21 @@ export default function RebuttalSection() {
     const [editSchedule, setEditSchedule] = useState<{ id: number | null; text: string }>({ id: null, text: "" });
     const [showDialog, setShowDialog] = useState(false);
 
-    // Handle file uploads
+    const handleDialogConfirm = () => {
+        console.log("Scheduling next hearing:", {
+            date: hearingDate,
+            time: hearingTime,
+            details: hearingDetails
+        });
+        console.log("Proceeding to next hearing...");
+        setShowDialog(false);
+        onProceed(); // Call the parent's proceed handler
+    };
+
+    const handleComplete = () => {
+        setShowDialog(true);
+    };
+
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, type: "Plaintiff" | "Defendant") => {
         if (!event.target.files) return;
 
@@ -66,29 +95,24 @@ export default function RebuttalSection() {
         setNewNote("");
     };
 
-    // Delete Note
     const deleteNote = (id: number) => {
         setNotes(notes.filter((note) => note.id !== id));
     };
 
-    // Add Schedule
     const addSchedule = () => {
         if (newSchedule.trim() === "") return;
         setSchedule([...schedule, { id: Date.now(), text: newSchedule, timestamp: new Date().toLocaleString() }]);
         setNewSchedule("");
     };
 
-    // Delete Schedule
     const deleteSchedule = (id: number) => {
         setSchedule(schedule.filter((item) => item.id !== id));
     };
 
-    // Edit Schedule
     const editScheduleHandler = (id: number, text: string) => {
         setEditSchedule({ id, text });
     };
 
-    // Save Edited Schedule
     const saveEditedSchedule = () => {
         setSchedule(
             schedule.map((item) =>
@@ -106,8 +130,8 @@ export default function RebuttalSection() {
     };
 
     return (
-        <div className="p-6 bg-gray-100">
-            <h2 className="text-green-700 font-semibold text-lg">REBUTTAL ONE</h2>
+        <div className="p-1">
+            <h2 className="text-green-700 font-semibold text-lg">{title}</h2>
 
             {/* Plaintiff & Defendant Sections */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -115,71 +139,73 @@ export default function RebuttalSection() {
                 <FileUploadCard title="DEFENDANT" files={defendantFiles} onUpload={(e) => handleFileUpload(e, "Defendant")} />
             </div>
 
-            {/* Messages Section */}
-            <Card className="p-4 mt-4">
-                <h3 className="text-md font-semibold">Messages</h3>
-                {messages.map((message) => (
-                    <div key={message.id} className="bg-gray-200 p-2 rounded-md mt-2">
-                        <p>{message.text}</p>
-                        <p className="text-sm text-gray-500 mt-1">{message.timestamp}</p>
-                    </div>
-                ))}
-                <div className="mt-2 flex items-center gap-2">
-                    <Textarea value={newMessage} onChange={(e: { target: { value: SetStateAction<string>; }; }) => setNewMessage(e.target.value)} placeholder="Add a message..." />
-                    <Button onClick={addMessage} variant="outline" className="flex gap-2">
-                        <PlusCircle size={16} /> Add Message
-                    </Button>
-                </div>
-            </Card>
+            <div className="grid grid-cols-2 gap-4 mt-4">
 
-            {/* Schedule Section */}
-            <Card className="p-4 mt-4">
-                <h3 className="text-md font-semibold">Schedule</h3>
-                {schedule.map((item) => (
-                    <div key={item.id} className="flex justify-between items-center bg-gray-200 p-2 rounded-md mt-2">
-                        {editSchedule.id === item.id ? (
-                            <input
-                                type="text"
-                                className="border rounded-md p-1 w-full"
-                                value={editSchedule.text}
-                                onChange={(e) => setEditSchedule({ ...editSchedule, text: e.target.value })}
+                <RebutalNotes />
+                <RebutalMessages />
+            </div>
+
+            <div className="flex justify-end mt-4">
+                <Button
+                    onClick={handleComplete}
+                    className="bg-green-600 hover:bg-green-700"
+                >
+                    Complete
+                </Button>
+            </div>
+
+            <Dialog open={showDialog} onOpenChange={setShowDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Schedule Next Hearing</DialogTitle>
+                        <DialogDescription>
+                            Please provide details for the next hearing session.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="hearing-date" className="text-right">
+                                Date
+                            </Label>
+                            <Input
+                                id="hearing-date"
+                                type="date"
+                                className="col-span-3"
+                                value={hearingDate}
+                                onChange={(e) => setHearingDate(e.target.value)}
                             />
-                        ) : (
-                            <>
-                                <p>{item.text}</p>
-                                <p className="text-sm text-gray-500">{item.timestamp}</p>
-                            </>
-                        )}
-                        <div className="flex gap-2">
-                            {editSchedule.id === item.id ? (
-                                <Button size="sm" onClick={saveEditedSchedule}>
-                                    Save
-                                </Button>
-                            ) : (
-                                <Pencil className="text-blue-500 cursor-pointer" size={18} onClick={() => editScheduleHandler(item.id, item.text)} />
-                            )}
-                            <button onClick={() => deleteSchedule(item.id)}>
-                                <Trash2 className="text-red-500" size={18} />
-                            </button>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="hearing-time" className="text-right">
+                                Time
+                            </Label>
+                            <Input
+                                id="hearing-time"
+                                type="time"
+                                className="col-span-3"
+                                value={hearingTime}
+                                onChange={(e) => setHearingTime(e.target.value)}
+                            />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="hearing-details" className="text-right">
+                                Details
+                            </Label>
+                            <Textarea
+                                id="hearing-details"
+                                className="col-span-3"
+                                value={hearingDetails}
+                                onChange={(e) => setHearingDetails(e.target.value)}
+                                placeholder="Enter hearing details..."
+                            />
                         </div>
                     </div>
-                ))}
-                <div className="mt-2 flex items-center gap-2">
-                    <Input value={newSchedule} onChange={(e) => setNewSchedule(e.target.value)} placeholder="Add schedule..." />
-                    <Button onClick={addSchedule} variant="outline" className="flex gap-2">
-                        <Calendar size={16} /> Schedule
-                    </Button>
-                </div>
-            </Card>
-
-            {/* Complete Button with Dialog */}
-            <Dialog open={showDialog} onOpenChange={setShowDialog}>
-                <DialogTrigger asChild>
-                    {/* <Button className="bg-green-600 text-white mt-4 w-auto">Add Rebuttal</Button> */}
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>localhost:3000</DialogHeader>
-                    <p>Case completed successfully!</p>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowDialog(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleDialogConfirm}>Schedule & Proceed</Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>
