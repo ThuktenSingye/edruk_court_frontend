@@ -1,3 +1,4 @@
+"use client";
 import { create } from "zustand";
 import axios from "axios";
 
@@ -17,6 +18,27 @@ interface AuthState {
     getUserRole: () => string | null;
 }
 
+const initializeAuthState = () => {
+    if (typeof window === "undefined") {
+        return {
+            token: null,
+            isAuthenticated: false,
+            userRole: null,
+        };
+    }
+
+    const token = localStorage.getItem("authToken");
+    const userRole = localStorage.getItem("userRole");
+
+    return {
+        token,
+        isAuthenticated: !!token,
+        userRole,
+    };
+};
+
+const { token, isAuthenticated, userRole } = initializeAuthState();
+
 export const useLoginStore = create<AuthState>((set, get) => ({
     email: "",
     password: "",
@@ -29,13 +51,17 @@ export const useLoginStore = create<AuthState>((set, get) => ({
 
     setToken: (token) => {
         if (typeof window !== "undefined") {
+            console.log("Saving token to localStorage:", token);
             localStorage.setItem("authToken", token);
+        } else {
+            console.warn("No window object — this is likely running on the server");
         }
         set({ token, isAuthenticated: !!token });
     },
 
     setUserRole: (role) => {
         if (typeof window !== "undefined") {
+            console.log("Saving role to localStorage:", role);
             localStorage.setItem("userRole", role);
         }
         set({ userRole: role });
@@ -53,12 +79,10 @@ export const useLoginStore = create<AuthState>((set, get) => ({
                 { user: { email, password } }
             );
 
-            // Get token from both response body and Authorization header
             const bodyToken = response.data.token;
             const authHeader = response.headers['authorization'];
             const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
 
-            // Use header token if available, otherwise fall back to body token
             const token = headerToken || bodyToken;
 
             if (!token) {
@@ -68,20 +92,18 @@ export const useLoginStore = create<AuthState>((set, get) => ({
             const rolesArray = response.data.data?.roles || [];
             const role = rolesArray.length > 0 ? rolesArray[0] : null;
 
-            // Update state and storage
             set({ isAuthenticated: true, token, userRole: role, loading: false });
 
             if (typeof window !== "undefined") {
                 localStorage.setItem("authToken", token);
                 if (role) localStorage.setItem("userRole", role);
 
-                // Set default axios authorization header
                 axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             }
         } catch (error) {
             console.error("Error logging in:", error);
             set({ loading: false });
-            throw error; // Re-throw to handle in component
+            throw error;
         }
     },
 
