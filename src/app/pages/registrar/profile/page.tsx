@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import CaseStatsCard from "@/components/ui/CaseStatsCard";
 
 interface Address {
   dzongkhag: string;
@@ -25,7 +26,7 @@ interface Profile {
 }
 
 const initialProfileState: Profile = {
-  id: "1",
+  id: "",
   first_name: "",
   last_name: "",
   cid_no: "",
@@ -36,28 +37,9 @@ const initialProfileState: Profile = {
   age: 0,
   gender: "",
   addresses_attributes: [
-    {
-      dzongkhag: "",
-      gewog: "",
-      street_address: "",
-      address_type: "present"
-    },
-    {
-      dzongkhag: "",
-      gewog: "",
-      street_address: "",
-      address_type: "permanent"
-    }
+    { dzongkhag: "", gewog: "", street_address: "", address_type: "present" },
+    { dzongkhag: "", gewog: "", street_address: "", address_type: "permanent" }
   ],
-};
-
-const BEARER_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI4OGQ3NDgyNS0zOTNmLTRiM2MtYmZjMy0zNDZhODUyYjQxOWUiLCJzdWIiOiI3Iiwic2NwIjoidXNlciIsImF1ZCI6bnVsbCwiaWF0IjoxNzQzNDM3MjgwLCJleHAiOjE3NDM0MzgxODB9.qJvSqURgExa2EpQ_EwfuAMw1CB1iLNi6qY3MjxpG9Go";
-
-const API_BASE_URL = "http://nganglam.lvh.me:3001/api/v1";
-
-const authHeaders = {
-  'Authorization': `Bearer ${BEARER_TOKEN}`,
-  'Content-Type': 'application/json'
 };
 
 const AddressSection = ({
@@ -97,9 +79,18 @@ const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [profile, setProfile] = useState<Profile>(initialProfileState);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const userId = '7';
+  const BEARER_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI4OGQ3NDgyNS0zOTNmLTRiM2MtYmZjMy0zNDZhODUyYjQxOWUiLCJzdWIiOiI3Iiwic2NwIjoidXNlciIsImF1ZCI6bnVsbCwiaWF0IjoxNzQ0NjQ0MDgyLCJleHAiOjE3NDQ2NDQ5ODJ9.dE_MGyYgVoSr4UVGd0DO4J3EAKJHoecZwSzo13AGGM0";
+
+  const getAuthHeaders = () => ({
+    'Authorization': `Bearer ${BEARER_TOKEN}`,
+    'Content-Type': 'application/json'
+  });
 
   const getInitials = () => {
     const first = profile.first_name?.charAt(0) || '';
@@ -108,18 +99,9 @@ const ProfilePage = () => {
   };
 
   const getAddressByType = (type: "present" | "permanent"): Address => {
-    const defaultAddress = {
-      dzongkhag: "",
-      gewog: "",
-      street_address: "",
-      address_type: type
+    return profile.addresses_attributes.find(addr => addr.address_type === type) || {
+      dzongkhag: "", gewog: "", street_address: "", address_type: type
     };
-
-    if (!profile.addresses_attributes) {
-      return defaultAddress;
-    }
-
-    return profile.addresses_attributes.find(addr => addr.address_type === type) || defaultAddress;
   };
 
   const fetchProfile = async () => {
@@ -127,32 +109,23 @@ const ProfilePage = () => {
       setIsLoading(true);
       setError(null);
       
-      const response = await fetch(`${API_BASE_URL}/profile`, {
-        headers: authHeaders
+      const response = await fetch(`http://nganglam.lvh.me:3001/api/v1/users/${userId}/profile`, {
+        headers: getAuthHeaders()
       });
       
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Failed to fetch profile (${response.status})`);
-      }
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       
       const result = await response.json();
+      if (!result.data) throw new Error("Invalid API response structure");
       
-      if (!result.data) {
-        throw new Error("Invalid API response structure");
-      }
-      
-      const apiData = result.data;
-      const profileData = {
+      setProfile({
         ...initialProfileState,
-        ...apiData,
-        addresses_attributes: apiData.addresses_attributes || initialProfileState.addresses_attributes
-      };
+        ...result.data,
+        addresses_attributes: result.data.addresses_attributes || initialProfileState.addresses_attributes
+      });
       
-      setProfile(profileData);
-      
-      if (apiData.profileImage) {
-        setPhotoPreview(apiData.profileImage);
+      if (result.data.profileImage) {
+        setPhotoPreview(result.data.profileImage);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -164,11 +137,8 @@ const ProfilePage = () => {
 
   useEffect(() => {
     fetchProfile();
-
     return () => {
-      if (photoPreview && photoPreview.startsWith('blob:')) {
-        URL.revokeObjectURL(photoPreview);
-      }
+      if (photoPreview?.startsWith('blob:')) URL.revokeObjectURL(photoPreview);
     };
   }, []);
 
@@ -176,53 +146,46 @@ const ProfilePage = () => {
     try {
       setIsLoading(true);
       setError(null);
+      setSuccessMessage(null);
 
-      // First handle photo upload if changed
-      const updateData = { ...profile };
-      if (photoFile) {
-        const formData = new FormData();
-        formData.append('profile_image', photoFile);
-        
-        const uploadResponse = await fetch(`${API_BASE_URL}/profile/upload`, {
-          method: "POST",
-          headers: { 'Authorization': `Bearer ${BEARER_TOKEN}` },
-          body: formData
-        });
+      const payload = {
+        profile: {
+          ...profile,
+          gender: profile.gender.toLowerCase(),
+          addresses_attributes: profile.addresses_attributes.map(addr => ({
+            ...addr,
+            address_type: addr.address_type
+          }))
+        }
+      };
 
-        if (!uploadResponse.ok) throw new Error("Image upload failed");
-        const { imageUrl } = await uploadResponse.json();
-        updateData.profileImage = imageUrl;
-      }
-
-      // Then update profile data
-      const response = await fetch(`${API_BASE_URL}/profile`, {
+      const response = await fetch(`http://nganglam.lvh.me:3001/api/v1/users/${userId}/profile`, {
         method: "PATCH",
-        headers: authHeaders,
-        body: JSON.stringify({
-          profile: updateData
-        })
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
       });
-
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Backend error details:", errorData);
-        throw new Error(errorData.message || "Update failed");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
-
-      const data = await response.json();
-      console.log("Update successful:", data);
+      
+      setSuccessMessage("Profile updated successfully!");
       setIsEditing(false);
       fetchProfile();
     } catch (error) {
-      console.error("Update error:", error);
-      setError(error instanceof Error ? error.message : "Update failed");
+      console.error("Error updating profile:", error);
+      setError(error instanceof Error ? error.message : "Failed to update profile");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>, field: keyof Profile) => {
-    setProfile({ ...profile, [field]: e.target.value });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, field: keyof Profile) => {
+    setProfile({
+      ...profile,
+      [field]: field === 'age' ? parseInt(e.target.value) || 0 : e.target.value
+    });
   };
 
   const handleAddressChange = (
@@ -230,16 +193,11 @@ const ProfilePage = () => {
     field: keyof Address,
     value: string
   ) => {
-    const updatedAddresses = profile.addresses_attributes.map(address => {
-      if (address.address_type === addressType) {
-        return { ...address, [field]: value };
-      }
-      return address;
-    });
-
     setProfile({
       ...profile,
-      addresses_attributes: updatedAddresses
+      addresses_attributes: profile.addresses_attributes.map(addr => 
+        addr.address_type === addressType ? { ...addr, [field]: value } : addr
+      )
     });
   };
 
@@ -249,6 +207,40 @@ const ProfilePage = () => {
       setPhotoFile(file);
       setPhotoPreview(URL.createObjectURL(file));
     }
+  };
+
+  const renderProfileField = (field: keyof Profile) => {
+    const value = profile[field];
+    const displayValue = value === undefined || value === null || value === '' ? '-' : String(value);
+    
+    return (
+      <div className="flex flex-col">
+        <p className="font-semibold capitalize">{field.toString().replace('_', ' ')}:</p>
+        {isEditing ? (
+          field === 'gender' ? (
+            <select
+              className="w-full border border-gray-400 p-2 rounded-md"
+              value={profile.gender}
+              onChange={(e) => handleChange(e, 'gender')}
+            >
+              <option value="">Select Gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          ) : (
+            <input
+              type={field === 'age' ? 'number' : field === 'email' ? 'email' : 'text'}
+              className="w-full border border-gray-400 p-2 rounded-md"
+              value={value as string | number}
+              onChange={(e) => handleChange(e, field)}
+            />
+          )
+        ) : (
+          <p className="text-gray-700">{displayValue}</p>
+        )}
+      </div>
+    );
   };
 
   if (isLoading && !isEditing) {
@@ -278,81 +270,73 @@ const ProfilePage = () => {
   return (
     <div className="min-h-screen flex justify-center p-8 bg-gray-100">
       <div className="w-full max-w-4xl border border-gray-300 rounded-lg p-8 flex flex-col bg-white shadow-md">
-        {/* Profile Picture Section */}
+        
+        {successMessage && (
+          <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+            {successMessage}
+          </div>
+        )}
+
         <div className="flex flex-col items-center mb-6">
           <div className="w-32 h-32 rounded-full bg-primary-normal hover:bg-primary-light flex items-center justify-center text-white text-2xl font-bold transition-all duration-300 shadow-md hover:shadow-lg overflow-hidden">
             {photoPreview ? (
-              <img
-                src={photoPreview}
-                alt="Profile"
-                className="w-full h-full object-cover"
-                onError={() => setPhotoPreview(null)}
-              />
+              <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" onError={() => setPhotoPreview(null)} />
             ) : (
               <span>{getInitials()}</span>
             )}
           </div>
           {isEditing && (
             <>
-              <input
-                type="file"
-                id="upload-photo"
-                className="mt-4 hidden"
-                onChange={handlePhotoChange}
-                accept="image/*"
-              />
-              <label
-                htmlFor="upload-photo"
-                className="mt-2 cursor-pointer text-gray-500 hover:text-gray-700 transition-colors"
-              >
+              <input type="file" id="upload-photo" className="mt-4 hidden" onChange={handlePhotoChange} accept="image/*" />
+              <label htmlFor="upload-photo" className="mt-2 cursor-pointer text-gray-500 hover:text-gray-700 transition-colors">
                 <span className="text-lg font-semibold">+ {photoPreview ? "Change Photo" : "Upload Photo"}</span>
               </label>
             </>
           )}
         </div>
 
-        {/* Profile Header */}
         <div className="flex justify-between mb-6">
           <h2 className="text-xl font-semibold">User Profile</h2>
-          <button
-            className="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition-all duration-300 font-semibold shadow-md hover:shadow-lg disabled:opacity-50"
-            onClick={isEditing ? handleUpdateProfile : () => setIsEditing(true)}
-            disabled={isLoading}
-          >
-            {isEditing ? (isLoading ? "Saving..." : "Save Changes") : "Edit Profile"}
-          </button>
+          <div className="flex gap-2">
+            {isEditing && (
+              <button
+                className="bg-gray-500 text-white px-5 py-2 rounded-lg hover:bg-gray-600 transition-all duration-300 font-semibold shadow-md hover:shadow-lg disabled:opacity-50"
+                onClick={() => setIsEditing(false)}
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+            )}
+            <button
+              className="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition-all duration-300 font-semibold shadow-md hover:shadow-lg disabled:opacity-50"
+              onClick={isEditing ? handleUpdateProfile : () => setIsEditing(true)}
+              disabled={isLoading}
+            >
+              {isEditing ? (isLoading ? "Saving..." : "Save Changes") : "Edit Profile"}
+            </button>
+          </div>
         </div>
 
-        {/* Main Profile Information Card */}
         <div className="p-6 bg-white rounded-lg mb-6 border border-gray-200 transition-all duration-300 shadow-sm hover:shadow-md">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Left Column */}
             <div className="space-y-4">
-              <div className="flex flex-col">
-                <p className="font-semibold">First Name:</p>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    className="w-full border border-gray-400 p-2 rounded-md"
-                    value={profile.first_name}
-                    onChange={(e) => handleChange(e, "first_name")}
-                  />
-                ) : (
-                  <p className="text-gray-700">{profile.first_name}</p>
-                )}
-              </div>
-
-              {/* Other fields... */}
+              {(['first_name', 'last_name', 'cid_no', 'phone_number', 'email'] as (keyof Profile)[]).map((field) => (
+                <div key={field}>
+                  {renderProfileField(field)}
+                </div>
+              ))}
             </div>
 
-            {/* Right Column */}
             <div className="space-y-4">
-              {/* Other fields... */}
+              {(['house_no', 'thram_no', 'age', 'gender'] as (keyof Profile)[]).map((field) => (
+                <div key={field}>
+                  {renderProfileField(field)}
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Address Sections */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <AddressSection
             title="Present Address"
@@ -367,6 +351,9 @@ const ProfilePage = () => {
             isEditing={isEditing}
           />
         </div>
+
+        {/* CaseStatsCard with self-contained data fetching */}
+        <CaseStatsCard userId={userId} />
       </div>
     </div>
   );

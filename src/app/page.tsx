@@ -1,5 +1,20 @@
-/** @format */
+"use client";
 
-export default function Home() {
-  return <div></div>;
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "./hooks/useAuthStore";
+
+export default function HomePage() {
+  const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/auth/login");
+    } else {
+      router.push("/pages/registrar/dashboard");
+    }
+  }, [isAuthenticated, router]);
+
+  return null;
 }

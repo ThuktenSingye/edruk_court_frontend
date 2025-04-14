@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 
 export interface CaseReport {
+    isManual: unknown;
     month: string;
     openingBalance: number;
     newRegistration: number;
@@ -50,15 +51,4 @@ export const useFetchCaseReports = () => {
     }, []);
 
     return { data, isLoading, error };
-}; export interface CaseReport {
-    month: string;
-    openingBalance: number;
-    newRegistration: number;
-    totalRegistered: number;
-    decidedCases: number;
-    pendingCases: number;
-    appeal: number;
-    remarks: number;
-    year: number;
-    benchClerk: string;
-}
+};

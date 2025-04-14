@@ -35,7 +35,7 @@ export default function RootLayout({
                             <Bell className="w-6 h-6 text-gray-700" />
                         </div>
                         <div className="cursor-pointer">
-                            <Link href="/user/profile">
+                            <Link href="/pages/registrar/profile">
                                 <UserCircle className="w-8 h-8 text-gray-700" />
                             </Link>
                         </div>
