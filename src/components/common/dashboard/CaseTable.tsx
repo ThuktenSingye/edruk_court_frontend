@@ -19,11 +19,9 @@ import {
     flexRender,
 } from "@tanstack/react-table";
 import axios from "axios";
-import Link from "next/link";
-import router from "next/router";
-import { Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { CaseTableSkeleton } from "./CaseTableSkeleton";
 
 interface Case {
     regNo: string;
@@ -44,11 +42,9 @@ interface CaseTableProps {
 
 const CaseTable: React.FC<CaseTableProps> = ({ userRole }) => {
     const [data, setData] = useState<Case[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true); // Start with true
     const [error, setError] = useState<string | null>(null);
     const [globalFilter, setGlobalFilter] = useState("");
-    const [selectedCase, setSelectedCase] = useState<Case | null>(null);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [statusFilter, setStatusFilter] = useState("");
     const router = useRouter();
 
@@ -67,8 +63,10 @@ const CaseTable: React.FC<CaseTableProps> = ({ userRole }) => {
 
     useEffect(() => {
         const fetchCases = async () => {
-            if (!userRole) return;
-            setLoading(true);
+            if (!userRole) {
+                setLoading(false);
+                return;
+            }
 
             try {
                 const response = await axios.get(getApiEndpoint());
@@ -86,6 +84,8 @@ const CaseTable: React.FC<CaseTableProps> = ({ userRole }) => {
 
     // Define Columns Based on User Role
     const columns = useMemo<ColumnDef<Case>[]>(() => {
+        if (!userRole) return [];
+
         let baseColumns: ColumnDef<Case>[] = [
             { accessorKey: "regNo", header: "Reg No", enableSorting: true },
             { accessorKey: "regDate", header: "Reg Date", enableSorting: true },
@@ -144,24 +144,13 @@ const CaseTable: React.FC<CaseTableProps> = ({ userRole }) => {
         globalFilterFn: "includesString",
     });
 
-    const { getHeaderGroups, getRowModel, previousPage, nextPage, setPageSize, getState, setGlobalFilter: setTableFilter } = table;
-    const { pageIndex, pageSize } = getState().pagination;
+    if (loading) {
+        return <CaseTableSkeleton userRole={userRole} />;
+    }
 
-    const handleEditClick = (caseDetails: Case) => {
-        setSelectedCase(caseDetails);
-        setIsDialogOpen(true);
-    };
-
-    const handleCloseDialog = () => {
-        setIsDialogOpen(false);
-        setSelectedCase(null);
-    };
-
-    // Apply search filter
-    const handleGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setGlobalFilter(e.target.value);
-        setTableFilter(e.target.value);
-    };
+    if (error) {
+        return <div className="text-red-500 p-4">Error: {error}</div>;
+    }
 
     return (
         <div className="ml-[-16px] p-4">
@@ -215,19 +204,7 @@ const CaseTable: React.FC<CaseTableProps> = ({ userRole }) => {
                     ))}
                 </TableHeader>
                 <TableBody>
-                    {loading ? (
-                        <TableRow>
-                            <TableCell colSpan={columns.length} className="text-center">
-                                Loading...
-                            </TableCell>
-                        </TableRow>
-                    ) : error ? (
-                        <TableRow>
-                            <TableCell colSpan={columns.length} className="text-center text-red-500">
-                                {error ?? "An error occurred"}
-                            </TableCell>
-                        </TableRow>
-                    ) : data.length > 0 ? (
+                    {table.getRowModel().rows.length > 0 ? (
                         table.getRowModel().rows.map((row) => (
                             <TableRow key={row.id} className="bg-white hover:bg-gray-100 transition duration-200 ease-in-out">
                                 {row.getVisibleCells().map((cell) => (
@@ -251,17 +228,17 @@ const CaseTable: React.FC<CaseTableProps> = ({ userRole }) => {
                 {/* Pagination Controls */}
                 <div className="flex items-center space-x-2">
                     <button
-                        onClick={() => previousPage()}
+                        onClick={() => table.previousPage()}
                         disabled={!table.getCanPreviousPage()}
                         className="bg-gray-200 text-gray-700 px-2 py-2 rounded disabled:opacity-50 flex items-center"
                     >
                         <FaChevronLeft />
                     </button>
                     <div className="px-2 text-sm font-medium">
-                        {pageIndex + 1} of {table.getPageCount()}
+                        {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
                     </div>
                     <button
-                        onClick={() => nextPage()}
+                        onClick={() => table.nextPage()}
                         disabled={!table.getCanNextPage()}
                         className="bg-gray-200 text-gray-700 px-2 py-2 rounded disabled:opacity-50 flex items-center"
                     >
@@ -274,8 +251,8 @@ const CaseTable: React.FC<CaseTableProps> = ({ userRole }) => {
                     <label htmlFor="pageSize" className="mr-2">Rows per page:</label>
                     <select
                         id="pageSize"
-                        value={pageSize}
-                        onChange={(e) => setPageSize(Number(e.target.value))}
+                        value={table.getState().pagination.pageSize}
+                        onChange={(e) => table.setPageSize(Number(e.target.value))}
                         className="border-gray-300 rounded px-2 py-1"
                     >
                         {[5, 10, 15, 20].map((size) => (
