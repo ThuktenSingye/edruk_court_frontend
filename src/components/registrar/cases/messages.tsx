@@ -6,7 +6,11 @@ const messages = [
     { id: 3, text: "Meeting scheduled for tomorrow", sender: "Manager" },
 ];
 
-export const Messages = () => {
+interface MessagesProps {
+    caseId: string;
+}
+
+export function Messages({ caseId }: MessagesProps) {
     return (
         <Card className="p-4 shadow-md rounded-xl">
             <h3 className="text-green-700 text-lg font-bold mb-3">MESSAGES</h3>
@@ -20,4 +24,4 @@ export const Messages = () => {
             </div>
         </Card>
     );
-};
+}

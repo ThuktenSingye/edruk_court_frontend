@@ -8,7 +8,11 @@ import { Schedule } from "@/components/registrar/cases/schedule";
 import { FileUpload } from "@/components/registrar/cases/fileUpload";
 import { Card } from "@/components/ui/card";
 
-export default function Home() {
+interface PreliminaryProps {
+    caseId: string;
+}
+
+export default function Preliminary({ caseId }: PreliminaryProps) {
     const [currentStep, setCurrentStep] = useState(0);
     const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 

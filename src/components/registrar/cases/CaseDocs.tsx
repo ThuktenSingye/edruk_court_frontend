@@ -1,6 +1,20 @@
 "use client";
-import { useState, ReactNode } from "react";
+import { useState, ReactNode, useEffect } from "react";
 import { ChevronRight, ChevronDown, FileText } from "lucide-react";
+import { useLoginStore } from "@/app/hooks/useLoginStore";
+
+interface CaseDocsProps {
+    caseId: string;
+}
+
+interface Document {
+    id: number;
+    name: string;
+    path: string;
+    fieldSign: string;
+    signable: boolean;
+    category: string;
+}
 
 // Folder Component
 const Folder = ({ name, children }: { name: string; children?: ReactNode }) => {
@@ -35,7 +49,7 @@ const File = ({
 }) => (
     <div className="flex flex-col items-start ml-8 hover:text-blue-500 cursor-pointer transition-all duration-200 ease-in-out mt-8">
         <div
-            onClick={onClick} // Trigger the modal on file click
+            onClick={onClick}
             className="flex items-center mb-2"
         >
             <FileText size={16} />
@@ -46,52 +60,82 @@ const File = ({
     </div>
 );
 
-const FileStructure = () => {
-    const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
-    const [pdfPath, setPdfPath] = useState(""); // Path to the PDF file
+const CaseDocs = ({ caseId }: CaseDocsProps) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [pdfPath, setPdfPath] = useState("");
+    const [documents, setDocuments] = useState<Document[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const { token } = useLoginStore();
+
+    useEffect(() => {
+        const fetchDocuments = async () => {
+            try {
+                const response = await fetch(`http://nganglam.lvh.me:3001/api/v1/cases/${caseId}/documents`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+                const data = await response.json();
+
+                if (response.ok && data.status === "ok") {
+                    setDocuments(data.data);
+                } else {
+                    setError("Failed to fetch documents");
+                }
+            } catch (err) {
+                setError("An error occurred while fetching documents");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (caseId) {
+            fetchDocuments();
+        }
+    }, [caseId, token]);
 
     const openModal = (path: string) => {
         setPdfPath(path);
-        setIsModalOpen(true); // Open the modal when a file is clicked
+        setIsModalOpen(true);
     };
 
     const closeModal = () => {
-        setIsModalOpen(false); // Close the modal
+        setIsModalOpen(false);
     };
+
+    // Group documents by category
+    const groupedDocuments = documents.reduce((acc, doc) => {
+        if (!acc[doc.category]) {
+            acc[doc.category] = [];
+        }
+        acc[doc.category].push(doc);
+        return acc;
+    }, {} as Record<string, Document[]>);
+
+    if (loading) return <p className="text-center text-gray-600">Loading documents...</p>;
+    if (error) return <p className="text-center text-red-500">{error}</p>;
 
     return (
         <div className="p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-lg border border-gray-200 mt-8">
-            <Folder name="Case ID: C002">
-                <Folder name="Case Registration">
-                    <File
-                        name="mydocument.pdf"
-                        path="mydocument-pdf"
-                        fieldSign="John Doe"
-                        signable={true}
-                        onClick={() => openModal("mydocument.pdf")}
-                    />
-                </Folder>
-                <Folder name="Miscellaneous Hearing">
-                    <File
-                        name="mydocument.pdf"
-                        path="mydocument-pdf"
-                        fieldSign="Jane Smith"
-                        signable={false}
-                        onClick={() => openModal("mydocument.pdf")}
-                    />
-                </Folder>
-                <Folder name="Opening Statement">
-                    <File
-                        name="mydocument.pdf"
-                        path="mydocument-pdf"
-                        fieldSign=""
-                        signable={true}
-                        onClick={() => openModal("mydocument.pdf")}
-                    />
-                </Folder>
+            <Folder name={`Case ID: ${caseId}`}>
+                {Object.entries(groupedDocuments).map(([category, docs]) => (
+                    <Folder key={category} name={category}>
+                        {docs.map((doc) => (
+                            <File
+                                key={doc.id}
+                                name={doc.name}
+                                path={doc.path}
+                                fieldSign={doc.fieldSign}
+                                signable={doc.signable}
+                                onClick={() => openModal(doc.path)}
+                            />
+                        ))}
+                    </Folder>
+                ))}
             </Folder>
 
-            {/* Modal for PDF Viewer */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
                     <div className="bg-white rounded-lg p-6 max-w-4xl w-full">
@@ -118,4 +162,4 @@ const FileStructure = () => {
     );
 };
 
-export default FileStructure;
+export default CaseDocs;

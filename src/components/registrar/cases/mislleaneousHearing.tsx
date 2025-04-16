@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Eye, Trash2, Calendar, Pencil } from "lucide-react";
@@ -27,31 +27,45 @@ interface Case {
     documents?: { id: number; name: string; date: string; url: string; visible: boolean; verified?: boolean }[];
 }
 
-export default function CaseDetails() {
-    const { regNo } = useParams();
+interface MislleaneousHearingProps {
+    caseId: string;
+}
+
+export default function MislleaneousHearing({ caseId }: MislleaneousHearingProps) {
     const router = useRouter();
     const [caseDetails, setCaseDetails] = useState<Case | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
-    const { userRole } = useLoginStore();
+    const { userRole, token } = useLoginStore();
 
     const [documents, setDocuments] = useState([
         { id: 1, name: "FileName1.pdf", date: "31 Dec, 2024", visible: true, url: "/mydocument.pdf", verified: false },
     ]);
 
     const [showDialog, setShowDialog] = useState(false);
+    const [showAllDocs, setShowAllDocs] = useState(false);
+    const [showVerifyDialog, setShowVerifyDialog] = useState(false);
+    const [currentDoc, setCurrentDoc] = useState<any>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [pdfPath, setPdfPath] = useState("");
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        if (!regNo) return;
+        if (!caseId) return;
 
         const fetchCaseDetails = async () => {
             try {
-                const response = await fetch(`http://localhost:3002/cases?regNo=${regNo}`);
+                const response = await fetch(`http://nganglam.lvh.me:3001/api/v1/cases/${caseId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
                 const data = await response.json();
 
-                if (response.ok && data.length > 0) {
-                    setCaseDetails(data[0]);
+                if (response.ok && data.status === "ok") {
+                    setCaseDetails(data.data);
                 } else {
                     setError("Case not found");
                 }
@@ -63,7 +77,7 @@ export default function CaseDetails() {
         };
 
         fetchCaseDetails();
-    }, [regNo]);
+    }, [caseId, token]);
 
     const handleInputChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -82,7 +96,7 @@ export default function CaseDetails() {
                 date: new Date().toLocaleDateString(),
                 visible: true,
                 url: URL.createObjectURL(file),
-                verified: false, // Add the missing 'verified' property
+                verified: false,
             };
 
             setDocuments((prev) => [...prev, newDoc]);
@@ -94,9 +108,10 @@ export default function CaseDetails() {
         setDocuments((docs) => docs.filter((doc) => doc.id !== id));
     }, []);
 
-    const [showAllDocs, setShowAllDocs] = useState(false);
-    const [showVerifyDialog, setShowVerifyDialog] = useState(false);
-    const [currentDoc, setCurrentDoc] = useState<any>(null);
+    const handleVerifyClick = useCallback((doc: any) => {
+        setCurrentDoc(doc);
+        setShowVerifyDialog(true);
+    }, []);
 
     const handleVerifyDocument = () => {
         setDocuments((docs) =>
@@ -108,21 +123,12 @@ export default function CaseDetails() {
 
     const handleOpenPdf = (path: string) => {
         setPdfPath(path);
-        setIsModalOpen(true); // Open the modal
+        setIsModalOpen(true);
     };
 
     const closeModal = () => {
-        setIsModalOpen(false); // Close the modal
+        setIsModalOpen(false);
     };
-
-    const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
-    const [pdfPath, setPdfPath] = useState(""); // Path to the PDF file
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const handleVerifyClick = useCallback((doc: any) => {
-        setCurrentDoc(doc);
-        setShowVerifyDialog(true);
-    }, []);
 
     const handleSave = () => {
         setIsEditing(false);
@@ -218,7 +224,7 @@ export default function CaseDetails() {
                                     ) : (
                                         // Registrar and Clerk see Verified status text
                                         <span className={`text-sm ${doc.verified ? 'text-green-500' : 'text-gray-500'}`}>
-                                            Verified
+                                            {doc.verified ? "Verified" : "Not Verified"}
                                         </span>
                                     )}
 
@@ -233,8 +239,8 @@ export default function CaseDetails() {
                         ))}
                 </CardContent>
             </Card>
-            {userRole === 'Judge' && (
 
+            {userRole === 'Judge' && (
                 <Dialog open={showVerifyDialog} onOpenChange={setShowVerifyDialog}>
                     <DialogContent className="max-w-4xl">
                         <DialogHeader>

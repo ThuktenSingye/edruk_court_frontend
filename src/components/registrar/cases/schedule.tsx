@@ -18,7 +18,11 @@ interface ScheduleItem {
     time: string;
 }
 
-export const Schedule = () => {
+interface ScheduleProps {
+    caseId: string;
+}
+
+export function Schedule({ caseId }: ScheduleProps) {
     const [schedule, setSchedule] = useState<ScheduleItem[]>([
         { id: 1, text: "Client Meeting", date: "2024-11-11", time: "07:30 PM" },
         { id: 2, text: "Court Hearing", date: "2024-11-12", time: "10:00 AM" },
@@ -55,6 +59,6 @@ export const Schedule = () => {
             </div>
         </Card>
     );
-};
+}
 
 

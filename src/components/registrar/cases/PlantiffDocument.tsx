@@ -22,7 +22,11 @@ const initialDocuments: Document[] = [
     { fileName: "Invoice.pdf", fileDate: "10 Feb, 2025", fileUrl: "/mydocument.pdf", verified: false },
 ];
 
-export const Plantiff = () => {
+interface PlantiffProps {
+    caseId: string;
+}
+
+export function Plantiff({ caseId }: PlantiffProps) {
     const [documents, setDocuments] = useState<Document[]>(initialDocuments);
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -96,4 +100,4 @@ export const Plantiff = () => {
             </div>
         </Card>
     );
-};
+}

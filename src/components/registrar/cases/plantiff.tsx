@@ -26,7 +26,11 @@ interface Profile {
     permanentAddress: Address;
 }
 
-export default function PlaintiffPage() {
+interface PlaintiffProps {
+    caseId: string;
+}
+
+export default function Plaintiff({ caseId }: PlaintiffProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [profile, setProfile] = useState<Profile>({
         id: 1,

@@ -1,12 +1,12 @@
-
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Eye, Trash2, Calendar, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useLoginStore } from "@/app/hooks/useLoginStore";
 
 interface Case {
     regNo: number;
@@ -26,13 +26,17 @@ interface Case {
     documents?: { id: number; name: string; date: string; url: string }[];
 }
 
-export default function MislleaneousHearing() {
-    const { regNo } = useParams();
+interface MislleaneousHearingProps {
+    caseId: string;
+}
+
+export default function MislleaneousHearing({ caseId }: MislleaneousHearingProps) {
     const router = useRouter();
     const [caseDetails, setCaseDetails] = useState<Case | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
+    const { token } = useLoginStore();
 
     const [documents, setDocuments] = useState([
         { id: 1, name: "Document 1", date: "31 Dec, 2024", visible: true, url: "/mydocument.pdf", verified: false },
@@ -57,15 +61,20 @@ export default function MislleaneousHearing() {
     };
 
     useEffect(() => {
-        if (!regNo) return;
+        if (!caseId) return;
 
         const fetchCaseDetails = async () => {
             try {
-                const response = await fetch(`http://localhost:3002/cases?regNo=${regNo}`);
+                const response = await fetch(`http://nganglam.lvh.me:3001/api/v1/cases/${caseId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
                 const data = await response.json();
 
-                if (response.ok && data.length > 0) {
-                    setCaseDetails(data[0]);
+                if (response.ok && data.status === "ok") {
+                    setCaseDetails(data.data);
                 } else {
                     setError("Case not found");
                 }
@@ -77,7 +86,7 @@ export default function MislleaneousHearing() {
         };
 
         fetchCaseDetails();
-    }, [regNo]);
+    }, [caseId, token]);
 
     const handleInputChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -211,7 +220,6 @@ export default function MislleaneousHearing() {
                     )}
                 </DialogContent>
             </Dialog>
-
         </div>
     );
 }

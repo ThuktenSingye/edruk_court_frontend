@@ -12,7 +12,24 @@ import ProceedingRegistrar from "@/components/registrar/cases/proceeding";
 import CaseDocs from "@/components/registrar/cases/CaseDocs";
 import { useLoginStore } from "@/app/hooks/useLoginStore";
 
-export default function ProfileButtons() {
+interface ButtonsProps {
+    caseId: string;
+}
+
+interface ChildComponentProps {
+    caseId: string;
+}
+
+// Define interfaces for each component
+interface CaseInfoProps extends ChildComponentProps { }
+interface PlaintiffProps extends ChildComponentProps { }
+interface WitnessProps extends ChildComponentProps { }
+interface ProceedingJudgeProps extends ChildComponentProps { }
+interface ProceedingRegistrarProps extends ChildComponentProps { }
+interface MislleaneousHearingProps extends ChildComponentProps { }
+interface CaseDocsProps extends ChildComponentProps { }
+
+export default function ProfileButtons({ caseId }: ButtonsProps) {
     const [activeSection, setActiveSection] = useState("caseInfo");
     const userRole = useLoginStore((state) => state.userRole);
 
@@ -81,16 +98,15 @@ export default function ProfileButtons() {
 
             {/* Section Content */}
             <div className="p-4">
-                {activeSection === "caseInfo" && <CaseInfo />}
+                {activeSection === "caseInfo" && <CaseInfo caseId={caseId} />}
 
-                {activeSection === "proceeding" && userRole === "Registrar" && <ProceedingRegistrar />}
-                {activeSection === "proceeding" && (userRole === "Judge" || userRole === "Clerk") && <ProceedingJudge />}
+                {activeSection === "proceeding" && userRole === "Registrar" && <ProceedingRegistrar caseId={caseId} />}
+                {activeSection === "proceeding" && (userRole === "Judge" || userRole === "Clerk") && <ProceedingJudge caseId={caseId} />}
 
-                {activeSection === "plaintiff" && <Plaintiff />}
-                {activeSection === "witness" && <Witness />}
-                {activeSection === "mislleaneousHearing" && <MislleaneousHearing />}
-                {activeSection === "casedocs" && <CaseDocs />}
-
+                {activeSection === "plaintiff" && <Plaintiff caseId={caseId} />}
+                {activeSection === "witness" && <Witness caseId={caseId} />}
+                {activeSection === "mislleaneousHearing" && <MislleaneousHearing caseId={caseId} />}
+                {activeSection === "casedocs" && <CaseDocs caseId={caseId} />}
             </div>
         </div>
     );
