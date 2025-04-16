@@ -22,18 +22,19 @@ import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { CaseTableSkeleton } from "./CaseTableSkeleton";
+import { useLoginStore } from "@/app/hooks/useLoginStore";
 
 interface Case {
-    regNo: string;
-    regDate: string;
-    plaintiff: string;
-    cid: string;
-    caseTitle: string;
-    status: string;
-    types?: string;
-    bench?: string;
-    clerk?: string;
-    nature?: string;
+    id: number;
+    case_number: string;
+    registration_number: string;
+    judgement_number: string;
+    title: string;
+    summary: string;
+    case_priority: string;
+    case_status: string;
+    case_subtype: number;
+    court: number;
 }
 
 interface CaseTableProps {
@@ -42,62 +43,93 @@ interface CaseTableProps {
 
 const CaseTable: React.FC<CaseTableProps> = ({ userRole }) => {
     const [data, setData] = useState<Case[]>([]);
-    const [loading, setLoading] = useState(true); // Start with true
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [globalFilter, setGlobalFilter] = useState("");
     const [statusFilter, setStatusFilter] = useState("");
     const router = useRouter();
-
-    const getApiEndpoint = () => {
-        switch (userRole) {
-            case "Registrar":
-                return "http://localhost:3002/casesRegistrar";
-            case "Judge":
-                return "http://localhost:3002/casesJudge";
-            case "Clerk":
-                return "http://localhost:3002/casesJudge";
-            default:
-                return "";
-        }
-    };
+    const { token, isAuthenticated } = useLoginStore();
 
     useEffect(() => {
         const fetchCases = async () => {
-            if (!userRole) {
+            if (!userRole || !token || !isAuthenticated) {
                 setLoading(false);
+                setError("Please log in to view cases.");
                 return;
             }
 
             try {
-                const response = await axios.get(getApiEndpoint());
-                setData(response.data);
+                setLoading(true);
+                setError(null);
+                const response = await axios.get("http://nganglam.lvh.me:3001/api/v1/cases", {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (response.data && response.data.status === "ok" && Array.isArray(response.data.data)) {
+                    setData(response.data.data);
+                } else {
+                    throw new Error("Invalid response format");
+                }
             } catch (error) {
                 console.error("Error fetching case data:", error);
-                setError("Failed to fetch cases.");
+                if (axios.isAxiosError(error)) {
+                    console.log("Response data:", error.response?.data);
+                    console.log("Response status:", error.response?.status);
+                    if (error.response?.status === 401) {
+                        setError("Session expired. Please log in again.");
+                    } else {
+                        setError(error.response?.data?.message || `Failed to fetch cases: ${error.message}`);
+                    }
+                } else {
+                    setError(`An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`);
+                }
             } finally {
                 setLoading(false);
             }
         };
 
         fetchCases();
-    }, [userRole]);
+    }, [userRole, token, isAuthenticated]);
 
     // Define Columns Based on User Role
     const columns = useMemo<ColumnDef<Case>[]>(() => {
         if (!userRole) return [];
 
         let baseColumns: ColumnDef<Case>[] = [
-            { accessorKey: "regNo", header: "Reg No", enableSorting: true },
-            { accessorKey: "regDate", header: "Reg Date", enableSorting: true },
-            { accessorKey: "plaintiff", header: "Plaintiff", enableSorting: true },
-            { accessorKey: "cid", header: "CID No", enableSorting: true },
-            { accessorKey: "caseTitle", header: "Case Title", enableSorting: true },
             {
-                accessorKey: "status",
+                accessorKey: "registration_number",
+                header: "Reg No",
+                enableSorting: true
+            },
+            {
+                accessorKey: "case_number",
+                header: "Case No",
+                enableSorting: true
+            },
+            {
+                accessorKey: "title",
+                header: "Title",
+                enableSorting: true
+            },
+            {
+                accessorKey: "summary",
+                header: "Summary",
+                enableSorting: true,
+                cell: ({ row }) => (
+                    <div className="max-w-xs truncate">
+                        {row.original.summary}
+                    </div>
+                ),
+            },
+            {
+                accessorKey: "case_status",
                 header: "Status",
                 enableSorting: true,
                 cell: ({ row }) => {
-                    const status = row.original.status;
+                    const status = row.original.case_status;
                     const colorClass =
                         status === "Ongoing"
                             ? "text-green-500"
@@ -107,14 +139,35 @@ const CaseTable: React.FC<CaseTableProps> = ({ userRole }) => {
                     return <span className={colorClass}>{status}</span>;
                 },
             },
+            {
+                accessorKey: "case_priority",
+                header: "Priority",
+                enableSorting: true,
+                cell: ({ row }) => {
+                    const priority = row.original.case_priority;
+                    const colorClass =
+                        priority === "High"
+                            ? "text-red-500"
+                            : priority === "Medium"
+                                ? "text-yellow-500"
+                                : "text-green-500";
+                    return <span className={colorClass}>{priority}</span>;
+                },
+            },
         ];
 
         if (userRole === "Judge" || userRole === "Clerk") {
             baseColumns.push(
-                { accessorKey: "types", header: "Types", enableSorting: true },
-                { accessorKey: "bench", header: "Bench", enableSorting: true },
-                { accessorKey: "clerk", header: "Bench Clerk", enableSorting: true },
-                { accessorKey: "nature", header: "Nature", enableSorting: true }
+                {
+                    accessorKey: "case_subtype",
+                    header: "Subtype",
+                    enableSorting: true
+                },
+                {
+                    accessorKey: "court",
+                    header: "Court",
+                    enableSorting: true
+                }
             );
         }
 
@@ -122,9 +175,13 @@ const CaseTable: React.FC<CaseTableProps> = ({ userRole }) => {
             id: "action",
             header: "Action",
             cell: ({ row }) => (
-                <a href={`/cases/${row.original.regNo}`} className="text-blue-500 hover:underline">
+                <Button
+                    onClick={() => router.push(`/pages/users/case/${row.original.id}`)}
+                    variant="link"
+                    className="text-blue-500 hover:underline p-0"
+                >
                     View
-                </a>
+                </Button>
             ),
         });
 
@@ -142,14 +199,21 @@ const CaseTable: React.FC<CaseTableProps> = ({ userRole }) => {
             pagination: { pageIndex: 0, pageSize: 5 },
         },
         globalFilterFn: "includesString",
+        state: {
+            globalFilter,
+        },
+        onGlobalFilterChange: setGlobalFilter,
     });
 
     if (loading) {
         return <CaseTableSkeleton userRole={userRole} />;
     }
 
-    if (error) {
-        return <div className="text-red-500 p-4">Error: {error}</div>;
+    if (!userRole || !isAuthenticated) {
+        return (
+            <div className="p-4">
+            </div>
+        );
     }
 
     return (
@@ -167,7 +231,6 @@ const CaseTable: React.FC<CaseTableProps> = ({ userRole }) => {
                             value={globalFilter}
                             onChange={(e) => {
                                 setGlobalFilter(e.target.value);
-                                table.setGlobalFilter(e.target.value);
                             }}
                             className="border rounded px-3 py-2 w-65 sm:w-auto"
                         />
@@ -176,13 +239,14 @@ const CaseTable: React.FC<CaseTableProps> = ({ userRole }) => {
                             onChange={(e) => {
                                 const value = e.target.value;
                                 setStatusFilter(value);
-                                table.getColumn("status")?.setFilterValue(value);
+                                table.getColumn("case_status")?.setFilterValue(value);
                             }}
                             className="border rounded px-3 py-2 w-65 sm:w-auto"
                         >
                             <option value="">All Status</option>
-                            <option value="Today">Today</option>
-                            <option value="Yesterday">Yesterday</option>
+                            <option value="Ongoing">Ongoing</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Pending">Pending</option>
                         </select>
                     </div>
                 </div>
@@ -193,7 +257,11 @@ const CaseTable: React.FC<CaseTableProps> = ({ userRole }) => {
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow key={headerGroup.id}>
                             {headerGroup.headers.map((header) => (
-                                <TableHead key={header.id} onClick={() => header.column.getToggleSortingHandler()}>
+                                <TableHead
+                                    key={header.id}
+                                    onClick={() => header.column.getToggleSortingHandler()}
+                                    className="cursor-pointer hover:bg-gray-100"
+                                >
                                     {flexRender(header.column.columnDef.header, header.getContext())}
                                     {header.column.getIsSorted() ? (
                                         header.column.getIsSorted() === "asc" ? " ↑" : " ↓"
@@ -208,7 +276,10 @@ const CaseTable: React.FC<CaseTableProps> = ({ userRole }) => {
                         table.getRowModel().rows.map((row) => (
                             <TableRow key={row.id} className="bg-white hover:bg-gray-100 transition duration-200 ease-in-out">
                                 {row.getVisibleCells().map((cell) => (
-                                    <TableCell key={cell.id} className="px-4 py-2 text-sm text-gray-1000 border-b border-gray-200">
+                                    <TableCell
+                                        key={cell.id}
+                                        className="px-4 py-2 text-sm text-gray-1000 border-b border-gray-200"
+                                    >
                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                     </TableCell>
                                 ))}

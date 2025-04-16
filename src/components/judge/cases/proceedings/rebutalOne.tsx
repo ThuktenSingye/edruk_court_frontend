@@ -30,15 +30,12 @@ interface Schedule {
     timestamp: string;
 }
 interface RebuttalSectionProps {
+    caseId: string;
     onProceed: () => void;
+    title: string;
 }
 
-interface RebuttalSectionProps {
-    onProceed: () => void;
-    title: string; // Add title prop
-}
-
-export default function RebuttalSection({ onProceed, title }: RebuttalSectionProps) {
+export default function RebutalOne({ caseId, onProceed, title }: RebuttalSectionProps) {
     const [hearingDate, setHearingDate] = useState("");
     const [hearingTime, setHearingTime] = useState("");
     const [hearingDetails, setHearingDetails] = useState("");

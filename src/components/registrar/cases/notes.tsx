@@ -15,7 +15,11 @@ interface Note {
     date: string;
 }
 
-export const Notes = () => {
+interface NotesProps {
+    caseId: string;
+}
+
+export function Notes({ caseId }: NotesProps) {
     const [notes, setNotes] = useState<Note[]>([
         { id: 1, text: "Meeting with client", date: new Date().toLocaleString() },
         { id: 2, text: "Submit project report", date: new Date().toLocaleString() },
@@ -57,4 +61,4 @@ export const Notes = () => {
             </div>
         </Card>
     );
-};
+}

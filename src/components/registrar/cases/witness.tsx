@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
+import { useLoginStore } from "@/app/hooks/useLoginStore";
 
 interface Address {
     village: string;
@@ -26,23 +27,58 @@ interface Profile {
     permanentAddress: Address;
 }
 
-export default function WitnessPage() {
+interface WitnessProps {
+    caseId: string;
+}
+
+export default function WitnessPage({ caseId }: WitnessProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [profile, setProfile] = useState<Profile>({
         id: 1,
-        firstName: "Ugyen",
-        lastName: "Penjor",
-        cid: "1190901141",
-        contact: "Nov 11, 2024",
-        email: "Normal",
-        occupation: "Active",
-        houseNo: "NO",
-        thramNo: "NO",
-        age: "This is case summary and all.",
-        gender: "Male", // Default value for gender
-        presentAddress: { village: "17289389", gewog: "17289389", dzongkhag: "17289389" },
-        permanentAddress: { village: "17289389", gewog: "17289389", dzongkhag: "17289389" },
+        firstName: "",
+        lastName: "",
+        cid: "",
+        contact: "",
+        email: "",
+        occupation: "",
+        houseNo: "",
+        thramNo: "",
+        age: "",
+        gender: "Male",
+        presentAddress: { village: "", gewog: "", dzongkhag: "" },
+        permanentAddress: { village: "", gewog: "", dzongkhag: "" },
     });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const { token } = useLoginStore();
+
+    useEffect(() => {
+        const fetchWitnessData = async () => {
+            try {
+                const response = await fetch(`http://nganglam.lvh.me:3001/api/v1/cases/${caseId}/witness`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+                const data = await response.json();
+
+                if (response.ok && data.status === "ok") {
+                    setProfile(data.data);
+                } else {
+                    setError("Failed to fetch witness data");
+                }
+            } catch (err) {
+                setError("An error occurred while fetching witness data");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (caseId) {
+            fetchWitnessData();
+        }
+    }, [caseId, token]);
 
     const handleEditToggle = () => {
         if (isEditing) {
@@ -61,6 +97,9 @@ export default function WitnessPage() {
             [type]: { ...profile[type], [key]: value },
         });
     };
+
+    if (loading) return <p className="text-center text-gray-600">Loading witness data...</p>;
+    if (error) return <p className="text-center text-red-500">{error}</p>;
 
     return (
         <div className="min-h-screen flex justify-center p-8">

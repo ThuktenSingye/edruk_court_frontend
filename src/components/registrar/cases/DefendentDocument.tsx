@@ -22,7 +22,11 @@ const initialDocuments: Document[] = [
     { fileName: "Invoice.pdf", fileDate: "10 Feb, 2025", fileUrl: "/mydocument.pdf", verified: false },
 ];
 
-export const Defendent = () => {
+interface DefendentProps {
+    caseId: string;
+}
+
+export function Defendent({ caseId }: DefendentProps) {
     const [documents, setDocuments] = useState<Document[]>(initialDocuments);
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -96,4 +100,4 @@ export const Defendent = () => {
             </div>
         </Card>
     );
-};
+}

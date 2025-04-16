@@ -26,14 +26,17 @@ interface Case {
     documents?: { id: number; name: string; date: string; url: string }[];
 }
 
-export default function CaseDetails() {
-    const { regNo } = useParams();
+interface CaseInfoProps {
+    caseId: string;
+}
+
+export default function CaseDetails({ caseId }: CaseInfoProps) {
     const router = useRouter();
     const [caseDetails, setCaseDetails] = useState<Case | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
-    const { userRole } = useLoginStore();
+    const { userRole, token } = useLoginStore();
 
     const [documents, setDocuments] = useState([
         { id: 1, name: "FileName1.pdf", date: "31 Dec, 2024", visible: true, url: "/mydocument.pdf" },
@@ -42,15 +45,20 @@ export default function CaseDetails() {
     const [showDialog, setShowDialog] = useState(false);
 
     useEffect(() => {
-        if (!regNo) return;
+        if (!caseId) return;
 
         const fetchCaseDetails = async () => {
             try {
-                const response = await fetch(`http://localhost:3002/cases?regNo=${regNo}`);
+                const response = await fetch(`http://nganglam.lvh.me:3001/api/v1/cases/${caseId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
                 const data = await response.json();
 
-                if (response.ok && data.length > 0) {
-                    setCaseDetails(data[0]);
+                if (response.ok && data.status === "ok") {
+                    setCaseDetails(data.data);
                 } else {
                     setError("Case not found");
                 }
@@ -62,7 +70,7 @@ export default function CaseDetails() {
         };
 
         fetchCaseDetails();
-    }, [regNo]);
+    }, [caseId, token]);
 
     const handleInputChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

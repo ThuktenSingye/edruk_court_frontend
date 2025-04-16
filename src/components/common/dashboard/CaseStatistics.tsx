@@ -57,9 +57,8 @@ const CaseStatistics = () => {
                 }
 
                 const result = await response.json();
-                console.log(result); // Check the response structure
+                console.log(result);
 
-                // Directly access result.data instead of result.data.data.attributes
                 if (!result || !result.data) {
                     setError("Invalid data format received");
                     setLoading(false);
