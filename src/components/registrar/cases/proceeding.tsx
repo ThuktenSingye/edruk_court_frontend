@@ -1,34 +1,78 @@
 "use client";
 
 import React, { useState } from "react";
-import Stepper from "@/components/judge/cases/stepper";
-import Preliminary from "../../registrar/cases/proceedings/preliminaryHearing";
-import RebutalOne from "../../registrar/cases/proceedings/rebutalOne";
-import RebutalTwo from "../../registrar/cases/proceedings/rebutalTwo";
-import RebutalThree from "../../registrar/cases/proceedings/rebutalThree";
-import RebutalFour from "../../registrar/cases/proceedings/rebutalFour";
-import Judgement from "../../registrar/cases/proceedings/judgement";
+import { Card, CardContent } from "@/components/ui/card";
+import Hearings from "@/components/registrar/cases/Hearings";
 
-interface ProceedingProps {
-    caseId: string;
+interface Hearing {
+    id: number;
+    hearing_status: string;
+    hearing_type: string;
+    schedules: {
+        id: number;
+        scheduled_date: string;
+        schedule_status: string;
+        scheduled_by: number;
+    }[];
 }
 
-export default function ProceedingPage({ caseId }: ProceedingProps) {
-    const [currentStep, setCurrentStep] = useState(0);
-    const totalSteps = 7;
+interface ProceedingPageProps {
+    caseId: string;
+    hearingId: string;
+    hearings: Hearing[];
+    caseDetails: {
+        id: string;
+        title: string;
+        description: string;
+        status: string;
+    }; // Replace with the actual structure of the Case object
+}
+
+export default function ProceedingPage({
+    caseId,
+    hearingId,
+    hearings,
+}: ProceedingPageProps) {
+    const [selectedHearingId, setSelectedHearingId] = useState(hearingId);
+
+    const handleTabClick = (id: string) => {
+        setSelectedHearingId(id);
+    };
+
+    const selectedHearing = hearings.find(
+        (hearing) => hearing.id.toString() === selectedHearingId
+    );
 
     return (
-        <div className="min-h-screen flex flex-col items-center p-8">
-            <Stepper currentStep={currentStep} totalSteps={totalSteps} onStepClickAction={setCurrentStep} />
+        <div className="flex h-screen bg-gray-50 overflow-hidden">
+            {/* Sidebar */}
+            <aside className="w-1/4 h-full p-6 bg-white border-r border-gray-200 overflow-y-auto">
+                <h2 className="text-2xl font-semibold text-green-700 mb-6">Hearings</h2>
+                <div className="space-y-3">
+                    {hearings.map((hearing) => (
+                        <div
+                            key={hearing.id}
+                            className={`cursor-pointer rounded-lg p-4 transition-all border ${hearing.id.toString() === selectedHearingId
+                                ? "bg-green-100 border-l-4 border-green-500"
+                                : "hover:bg-gray-100 border-gray-200"
+                                }`}
+                            onClick={() => handleTabClick(hearing.id.toString())}
+                        >
+                            <h3 className="text-lg font-medium">{hearing.hearing_type}</h3>
+                        </div>
+                    ))}
+                </div>
+            </aside>
 
-            <div className="mt-6 p-6 border rounded-lg w-3/4 bg-white shadow">
-                {currentStep === 0 && <Preliminary caseId={caseId} />}
-                {currentStep === 1 && <RebutalOne caseId={caseId} />}
-                {currentStep === 2 && <RebutalTwo caseId={caseId} />}
-                {currentStep === 3 && <RebutalThree caseId={caseId} />}
-                {currentStep === 4 && <RebutalFour caseId={caseId} />}
-                {currentStep === 5 && <Judgement caseId={caseId} />}
-            </div>
+            {/* Main Content */}
+            <main className="flex-1 p-10 -mt-4">
+                <Card className="max-w-3xl mx-auto shadow-lg">
+                    <Hearings selectedHearingId={selectedHearingId} hearings={hearings} caseId={caseId} />
+                </Card>
+            </main>
+
+
         </div>
+
     );
 }

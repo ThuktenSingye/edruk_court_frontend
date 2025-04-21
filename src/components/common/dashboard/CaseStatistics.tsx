@@ -45,7 +45,9 @@ const CaseStatistics = () => {
                     return;
                 }
 
-                const response = await fetch("http://nganglam.lvh.me:3001/api/v1/cases/statistics", {
+                const host = window.location.hostname;
+
+                const response = await fetch(`http://${host}:3001/api/v1/cases/statistics`, {
                     headers: {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${currentToken}`,

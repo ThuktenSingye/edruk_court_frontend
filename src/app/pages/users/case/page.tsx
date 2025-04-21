@@ -52,6 +52,7 @@ export default function CaseInfoPage() {
     const [secondTableSearchQuery, setSecondTableSearchQuery] = useState<string>("");
     const router = useRouter();
     const searchParams = useSearchParams();
+    const host = window.location.hostname;
 
     // Get role with multiple fallbacks
     const effectiveRole = searchParams.get('role') || userRole || getUserRole() ||
@@ -69,14 +70,16 @@ export default function CaseInfoPage() {
                     return;
                 }
 
-                const response = await fetch("http://nganglam.lvh.me:3001/api/v1/cases", {
+                const host = window.location.hostname;
+
+                const response = await fetch(`http://${host}:3001/api/v1/cases`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     }
                 });
 
-                console.log("Response status:", response.status); // Debug response status
+                console.log("Response status:", response.status);
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Documents } from "@/components/registrar/cases/documents";
-import { FileUpload } from "@/components/registrar/cases/fileUpload";
+import { FileUpload } from "@/components/registrar/cases/ScheduleWrapper";
 import { Card } from "@/components/ui/card";
 
 const Judicial = () => {

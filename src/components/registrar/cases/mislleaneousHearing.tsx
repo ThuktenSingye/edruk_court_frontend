@@ -54,9 +54,11 @@ export default function MislleaneousHearing({ caseId }: MislleaneousHearingProps
     useEffect(() => {
         if (!caseId) return;
 
+        const host = window.location.hostname;
+
         const fetchCaseDetails = async () => {
             try {
-                const response = await fetch(`http://nganglam.lvh.me:3001/api/v1/cases/${caseId}`, {
+                const response = await fetch(`http://${host}:3001/api/v1/cases/${caseId}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',

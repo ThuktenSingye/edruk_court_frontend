@@ -13,29 +13,36 @@ const LoginPage: React.FC = () => {
         setUser,
         login,
         isAuthenticated,
-        checkAuth
+        checkAuth,
+        userRole,
     } = useLoginStore();
 
-    // Check existing auth on initial load
     useEffect(() => {
         const isAuth = checkAuth();
         if (isAuth) {
-            router.push("/pages/dashboard");
+            redirectUser();
         }
-    }, [checkAuth, router]);
+    }, []);
 
-    // Handle login and redirect
     useEffect(() => {
         if (isAuthenticated) {
+            redirectUser();
+        }
+    }, [isAuthenticated, userRole]);
+
+    const redirectUser = () => {
+        if (userRole === "Admin") {
+            router.push("/pages/admin");
+        } else {
             router.push("/pages/dashboard");
         }
-    }, [isAuthenticated, router]);
+    };
 
     const handleLogin = async () => {
         try {
             await login();
+            // No need to push here — `useEffect` will handle the redirect
         } catch (error) {
-            // You can add error handling UI here if needed
             console.error("Login error:", error);
         }
     };

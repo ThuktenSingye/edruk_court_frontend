@@ -1,21 +1,22 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import toast, { Toaster } from "react-hot-toast";
-import { EventApi } from "@fullcalendar/core"; // ✅ Import for type
+import axios from "axios";
+import { motion } from "framer-motion";
+import Image from "next/image";
 
-// Components
-import EventList from "@/components/common/calendar/EventList";
+import CalendarEventSidebar from "@/components/common/calendar/CalendarEventSidebar";
 import EventDialog from "@/components/common/calendar/EventDialog";
 import EventDetailsDialog from "@/components/common/calendar/EventDetailsDialog";
 import EventTable from "@/components/common/calendar/EventTable";
+import { useLoginStore } from "@/app/hooks/useLoginStore";
 
 const Calendar: React.FC = () => {
-    const [currentEvents, setCurrentEvents] = useState<any[]>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isEventDetailsDialogOpen, setIsEventDetailsDialogOpen] = useState(false);
     const [newEventTitle, setNewEventTitle] = useState("");
@@ -27,68 +28,109 @@ const Calendar: React.FC = () => {
     const [reschedulingEventId, setReschedulingEventId] = useState<string | null>(null);
     const [eventStart, setEventStart] = useState<Date | undefined>();
     const [currentPage, setCurrentPage] = useState(1);
+    const [currentEvents, setCurrentEvents] = useState<any[]>([]);
+    const [isPosting, setIsPosting] = useState(false);
     const eventsPerPage = 5;
 
-    useEffect(() => {
-        const savedEvents = localStorage.getItem("events");
-        if (savedEvents) {
-            setCurrentEvents(JSON.parse(savedEvents));
-        }
-    }, []);
-
-    useEffect(() => {
-        localStorage.setItem("events", JSON.stringify(currentEvents));
-    }, [currentEvents]);
-
-    const formatDate = (date: Date) =>
-        `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()}`;
-
-    const formatTime = (date: Date) =>
-        date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
-
     const handleDateClick = (selected: any) => {
+        if (isPosting) return;
         setEventStart(new Date(selected.startStr));
         setIsDialogOpen(true);
     };
 
     const handleEventClick = (selected: any) => {
+        if (isPosting) return;
         setSelectedEvent(selected.event);
         setIsEventDetailsDialogOpen(true);
     };
 
-    const handleAddEvent = (e: React.FormEvent) => {
+    const handleAddEvent = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!eventStart) return toast.error("Please select a start time");
 
-        const newEvent = {
-            id: reschedulingEventId || `${eventStart.toISOString()}`,
-            title: eventDescription || "Untitled Event",
-            start: eventStart,
-            color: "#10B981",
-            extendedProps: {
-                description: eventDescription,
-                caseId,
-                hearingType,
-                done: false,
-            },
+        if (isPosting) return;
+
+        if (!eventStart) {
+            toast.error("Please select a start time");
+            return;
+        }
+
+        const token = useLoginStore.getState().token;
+        const userId = useLoginStore.getState().userId;
+
+        if (!token || !userId) {
+            toast.error("User not authenticated");
+            return;
+        }
+
+        const hearing_type_id = hearingType === "Miscellaneous Hearing" ? 1 : 2;
+
+        const payload = {
+            hearing_status: "pending",
+            hearing_type_id,
+            case_id: parseInt(caseId),
+            hearing_schedules_attributes: [
+                {
+                    scheduled_date: eventStart.toISOString(),
+                    schedule_status: "pending",
+                    scheduled_by_id: parseInt(userId),
+                },
+            ],
         };
 
-        setCurrentEvents((prev) =>
-            isRescheduling && reschedulingEventId
-                ? prev.map((e) => (e.id === reschedulingEventId ? newEvent : e))
-                : [...prev, newEvent]
-        );
+        setIsPosting(true);
 
-        toast.success(isRescheduling ? "Event rescheduled!" : "Event added!");
-        handleCloseDialog();
+        const host = window.location.hostname;
+
+        try {
+            await axios.post(
+                `http://${host}/api/v1/cases/${caseId}/hearings`,
+                payload,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            toast.success("Hearing scheduled successfully");
+
+            const newEvent = {
+                id: reschedulingEventId || `${eventStart.toISOString()}`,
+                title: eventDescription || "Untitled Event",
+                start: eventStart,
+                color: "#10B981",
+                extendedProps: {
+                    description: eventDescription,
+                    caseId,
+                    hearingType,
+                    done: false,
+                    status: isRescheduling ? "Rescheduled" : "Pending",
+                },
+            };
+
+            setCurrentEvents((prev) => {
+                if (isRescheduling && reschedulingEventId) {
+                    return prev.map((e) => (e.id === reschedulingEventId ? newEvent : e));
+                }
+                return [...prev, newEvent];
+            });
+
+            handleCloseDialog();
+        } catch (error) {
+            console.error("POST failed:", error);
+            toast.error("Failed to schedule hearing");
+        } finally {
+            setIsPosting(false);
+        }
     };
 
     const handleDeleteEvent = () => {
+        if (isPosting) return;
         if (selectedEvent) {
-            selectedEvent.remove();
             setCurrentEvents((prev) => prev.filter((e) => e.id !== selectedEvent.id));
             setIsEventDetailsDialogOpen(false);
-            toast.success("Event deleted");
+            toast.success("Hearing cancelled");
         }
     };
 
@@ -103,79 +145,43 @@ const Calendar: React.FC = () => {
         setReschedulingEventId(null);
     };
 
-    const handleToggleDone = (eventId: string) => {
-        setCurrentEvents((prev) =>
-            prev.map((event) =>
-                event.id === eventId
-                    ? { ...event, extendedProps: { ...event.extendedProps, done: !event.extendedProps.done } }
-                    : event
-            )
-        );
-    };
-
     return (
         <>
-            <style>
-                {`
-          .fc .fc-button {
-            background-color: #046200;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 0.45rem 1rem;
-            font-weight: 500;
-          }
-          .fc .fc-button:hover {
-            background-color: #034f00;
-            cursor: pointer;
-          }
-          .fc .fc-button.fc-button-active {
-            background-color: #034f00;
-            color: white;
-          }
-          .fc .fc-toolbar-title {
-            color: #046200;
-            font-weight: 600;
-          }
-          .fc .fc-button:focus {
-            outline: none !important;
-            box-shadow: none !important;
-          }
-          .fc .fc-daygrid-day-events {
-            max-height: 80px;
-            overflow-y: auto;
-          }
-        `}
-            </style>
+            <Toaster />
 
-            <div className="bg-gray-100 min-h-screen p-6">
-                <div className="bg-gray-100 border-[1.5px] border-[#046200] rounded-xl shadow-md p-6">
+            {/* Loading Overlay */}
+            {isPosting && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+                    <motion.div
+                        className="bg-white/90 p-4 rounded-full shadow-xl border-4 border-[#046200]"
+                        animate={{ rotate: 360 }}
+                        transition={{
+                            repeat: Infinity,
+                            duration: 1.5,
+                            ease: "linear"
+                        }}
+                    >
+                        <Image
+                            src="/logo.png"
+                            alt="Loading"
+                            width={80}
+                            height={80}
+                            className="rounded-full"
+                            priority
+                        />
+                    </motion.div>
+                </div>
+            )}
+
+            {/* Main Calendar Content */}
+            <div className={`bg-gray-100 min-h-screen p-6 ${isPosting ? 'pointer-events-none' : ''}`}>
+                <div className={`bg-white rounded-xl shadow-md p-6 ${isPosting ? 'opacity-90' : ''}`}>
                     <div className="flex flex-col lg:flex-row gap-8">
                         <div className="w-full lg:w-3/12">
-                            <div className="bg-white border border-[#046200] shadow-md rounded-xl p-4 h-full">
-                                <h2 className="text-xl font-semibold text-[#046200] mb-4">Calendar Events</h2>
-                                <div className="overflow-y-auto max-h-[680px] pr-2">
-                                    <EventList
-                                        events={currentEvents}
-                                        formatDate={formatDate}
-                                        formatTime={formatTime}
-                                        onReschedule={(event: EventApi) => {
-                                            setIsDialogOpen(true);
-                                            setIsRescheduling(true);
-                                            setReschedulingEventId(event.id);
-                                            setNewEventTitle(event.title);
-                                            setEventDescription(event.extendedProps.description);
-                                            setCaseId(event.extendedProps.caseId);
-                                            setHearingType(event.extendedProps.hearingType);
-                                            setEventStart(event.start ? new Date(event.start) : new Date());
-                                        }}
-                                    />
-                                </div>
-                            </div>
+                            <CalendarEventSidebar />
                         </div>
-
-                        <div className="w-full lg:w-9/12 mt-8">
-                            <div className="bg-white rounded-lg shadow-md p-4 text-[#046200]">
+                        <div className="w-full lg:w-9/12">
+                            <div className="bg-white rounded-lg p-4 h-[70vh] overflow-hidden">
                                 <FullCalendar
                                     plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                                     headerToolbar={{
@@ -184,14 +190,24 @@ const Calendar: React.FC = () => {
                                         right: "dayGridMonth,timeGridWeek,timeGridDay",
                                     }}
                                     initialView="dayGridMonth"
-                                    selectable={true}
+                                    selectable={!isPosting}
                                     select={handleDateClick}
                                     eventClick={handleEventClick}
                                     events={currentEvents}
-                                    eventColor="#046200"
-                                    height="auto"
-                                    dayMaxEventRows={3}
-                                    dayMaxEvents={true}
+                                    eventContent={(eventInfo) => (
+                                        <div className="flex items-center">
+                                            <span className="inline-block w-2 h-2 rounded-full bg-[#046200] mr-1"></span>
+                                            <span className="truncate">{eventInfo.timeText} {eventInfo.event.title}</span>
+                                        </div>
+                                    )}
+                                    height="100%"
+                                    dayMaxEvents={false}
+                                    dayMaxEventRows={true}
+                                    dayCellClassNames="overflow-hidden"
+                                    dayCellContent={(args) => {
+                                        args.dayNumberText = args.dayNumberText.replace(/^0/, '');
+                                        return { html: args.dayNumberText };
+                                    }}
                                 />
                             </div>
                         </div>
@@ -199,7 +215,7 @@ const Calendar: React.FC = () => {
 
                     <EventDialog
                         open={isDialogOpen}
-                        onOpenChange={setIsDialogOpen}
+                        onOpenChange={isPosting ? undefined : setIsDialogOpen}
                         isRescheduling={isRescheduling}
                         newEventTitle={newEventTitle}
                         setNewEventTitle={setNewEventTitle}
@@ -216,10 +232,10 @@ const Calendar: React.FC = () => {
 
                     <EventDetailsDialog
                         open={isEventDetailsDialogOpen}
-                        onOpenChange={setIsEventDetailsDialogOpen}
+                        onOpenChange={isPosting ? undefined : setIsEventDetailsDialogOpen}
                         selectedEvent={selectedEvent}
                         onDelete={handleDeleteEvent}
-                        onReschedule={() => {
+                        onReschedule={isPosting ? undefined : () => {
                             setIsDialogOpen(true);
                             setIsRescheduling(true);
                             setReschedulingEventId(selectedEvent.id);
@@ -232,7 +248,7 @@ const Calendar: React.FC = () => {
                         }}
                     />
 
-                    <div className="bg-white rounded-lg shadow-md mt-10 p-4">
+                    <div className="bg-white rounded-lg shadow-md mt-6 p-4">
                         <EventTable
                             events={currentEvents}
                             currentPage={currentPage}
@@ -240,10 +256,45 @@ const Calendar: React.FC = () => {
                             paginate={setCurrentPage}
                         />
                     </div>
-
-                    <Toaster />
                 </div>
             </div>
+
+            <style jsx global>{`
+        /* Custom scrollbar for calendar */
+        .fc-scroller {
+          overflow-y: auto !important;
+          scrollbar-width: thin;
+          
+        }
+        
+        .fc-scroller::-webkit-scrollbar {
+          width: 6px;
+        }
+        
+        .fc-scroller::-webkit-scrollbar-thumb {
+          background: #046200;
+          border-radius: 3px;
+        }
+        
+        /* Event container scrolling */
+        .fc-daygrid-day-events {
+          max-height: 120px;
+          overflow-y: auto;
+        }
+        
+        /* Cell styling */
+        .fc-daygrid-day-frame {
+          min-height: 100px;
+        }
+        
+        /* Event text truncation */
+        .truncate {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 120px;
+        }
+      `}</style>
         </>
     );
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { File, Lock } from "lucide-react";
 import CaseInfo from "@/components/registrar/cases/CaseInfo";
@@ -11,101 +11,139 @@ import MislleaneousHearing from "@/components/registrar/cases/mislleaneousHearin
 import ProceedingRegistrar from "@/components/registrar/cases/proceeding";
 import CaseDocs from "@/components/registrar/cases/CaseDocs";
 import { useLoginStore } from "@/app/hooks/useLoginStore";
+import { useHearingStore } from "@/app/hooks/useHearingStore";
 
-interface ButtonsProps {
-    caseId: string;
+interface Case {
+    id: string;
+    title: string;
+    description: string;
+    status: "Active" | "Urgent" | "Enforcement" | "Appeal";
+    regNo: number;
+    regDate: string;
+    plaintiff: string;
+    cidNo: string;
+    caseTitle: string;
+    types: string;
+    bench: string;
+    benchClerk: string;
+    nature: string;
+    severity?: string;
+    appeal?: string;
+    enforcement?: string;
+    summary?: string;
+    documents?: { visible: boolean; id: number; name: string; date: string; url: string }[];
 }
 
-interface ChildComponentProps {
-    caseId: string;
+interface Hearing {
+    id: number;
+    hearing_status: string;
+    hearing_type: string;
+    schedules: {
+        id: number;
+        scheduled_date: string;
+        schedule_status: string;
+        scheduled_by: number;
+    }[];
 }
 
-// Define interfaces for each component
-interface CaseInfoProps extends ChildComponentProps { }
-interface PlaintiffProps extends ChildComponentProps { }
-interface WitnessProps extends ChildComponentProps { }
-interface ProceedingJudgeProps extends ChildComponentProps { }
-interface ProceedingRegistrarProps extends ChildComponentProps { }
-interface MislleaneousHearingProps extends ChildComponentProps { }
-interface CaseDocsProps extends ChildComponentProps { }
+interface CaseInfoProps {
+    caseId: string;
+    hearingId: string;
+    caseDetails: Case;
+    hearings: Hearing[];
+}
 
-export default function ProfileButtons({ caseId }: ButtonsProps) {
+export default function ProfileButtons({ caseId, hearingId }: CaseInfoProps) {
     const [activeSection, setActiveSection] = useState("caseInfo");
-    const userRole = useLoginStore((state) => state.userRole);
+    const { userRole, token } = useLoginStore();
+    const [caseDetails, setCaseDetails] = useState<Case | null>(null);
+    const [hearings, setHearings] = useState<Hearing[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const { setHearings: setHearingStore } = useHearingStore();
+
+    useEffect(() => {
+        const fetchCaseData = async () => {
+            try {
+
+                const host = window.location.hostname;
+
+                const [caseRes, hearingRes] = await Promise.all([
+                    fetch(`http://${host}:3001/api/v1/cases/${caseId}`, {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            "Content-Type": "application/json",
+                        },
+                    }),
+                    fetch(`http://${host}:3001/api/v1/cases/${caseId}/hearings`, {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            "Content-Type": "application/json",
+                        },
+                    }),
+                ]);
+
+                const caseData = await caseRes.json();
+                const hearingData = await hearingRes.json();
+
+                if (caseRes.ok && caseData.status === "ok") {
+                    setCaseDetails(caseData.data);
+                } else {
+                    setError("Case not found");
+                }
+
+                if (hearingRes.ok && hearingData.status === "ok") {
+                    setHearings(hearingData.data);
+                    setHearingStore(hearingData.data);
+                }
+            } catch (err) {
+                setError("An error occurred while fetching data.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCaseData();
+    }, [caseId, token]);
+
+    if (loading) return <p>Loading...</p>;
+    if (error || !caseDetails) return <p className="text-red-500">{error || "No case data."}</p>;
 
     return (
         <div>
-            {/* Buttons Navigation */}
+            {/* Tabs */}
             <div className="flex flex-row justify-start gap-4 py-4 border-b gap-x-7 border-gray-300">
-                {/* Case Info Button */}
-                <Button
-                    className={`w-32 flex items-center gap-2 ${activeSection === "caseInfo" ? "bg-primary-normal" : "bg-gray-300"
-                        } text-white`}
-                    onClick={() => setActiveSection("caseInfo")}
-                >
-                    <File className="h-4 w-4" />
-                    Case Info
-                </Button>
-
-                <Button
-                    className={`w-32 flex items-center gap-2 ${activeSection === "mislleaneousHearing" ? "bg-primary-normal" : "bg-gray-300"
-                        } text-white`}
-                    onClick={() => setActiveSection("mislleaneousHearing")}
-                >
-                    <File className="h-4 w-4" />
-                    <span className="truncate"> Miscellaneous Hearing</span>
-                </Button>
-
-                {/* Proceeding Button */}
-                <Button
-                    className={`w-32 flex items-center gap-2 ${activeSection === "proceeding" ? "bg-primary-normal" : "bg-gray-300"
-                        } text-white`}
-                    onClick={() => setActiveSection("proceeding")}
-                >
-                    <Lock className="h-4 w-4" />
-                    Proceeding
-                </Button>
-
-                {/* Plaintiff Button */}
-                <Button
-                    className={`w-32 flex items-center gap-2 ${activeSection === "plaintiff" ? "bg-primary-normal" : "bg-gray-300"
-                        } text-white`}
-                    onClick={() => setActiveSection("plaintiff")}
-                >
-                    <Lock className="h-4 w-4" />
-                    Plaintiff
-                </Button>
-
-                {/* Witness Button */}
-                <Button
-                    className={`w-32 flex items-center gap-2 ${activeSection === "witness" ? "bg-primary-normal" : "bg-gray-300"
-                        } text-white`}
-                    onClick={() => setActiveSection("witness")}
-                >
-                    <Lock className="h-4 w-4" />
-                    Witness
-                </Button>
-
-                <Button
-                    className={`w-32 flex items-center gap-2 ${activeSection === "casedocs" ? "bg-primary-normal" : "bg-gray-300"
-                        } text-white`}
-                    onClick={() => setActiveSection("casedocs")}
-                >
-                    <Lock className="h-4 w-4" />
-                    Case Docs
-                </Button>
+                {[
+                    ["caseInfo", "Case Info"],
+                    ["proceeding", "Proceeding"],
+                    ["plaintiff", "Plaintiff"],
+                    ["witness", "Witness"],
+                    ["casedocs", "Case Docs"],
+                ].map(([key, label]) => (
+                    <Button
+                        key={key}
+                        className={`w-32 flex items-center gap-2 ${activeSection === key ? "bg-primary-normal" : "bg-gray-300"
+                            } text-white`}
+                        onClick={() => setActiveSection(key)}
+                    >
+                        <File className="h-4 w-4" />
+                        {label}
+                    </Button>
+                ))}
             </div>
 
             {/* Section Content */}
             <div className="p-4">
-                {activeSection === "caseInfo" && <CaseInfo caseId={caseId} />}
-
-                {activeSection === "proceeding" && userRole === "Registrar" && <ProceedingRegistrar caseId={caseId} />}
-                {activeSection === "proceeding" && (userRole === "Judge" || userRole === "Clerk") && <ProceedingJudge caseId={caseId} />}
-
+                {activeSection === "caseInfo" && (
+                    <CaseInfo caseId={caseId} hearingId={hearingId} caseDetails={caseDetails} hearings={hearings} />
+                )}
+                {activeSection === "proceeding" && (<ProceedingRegistrar caseId={caseId} hearingId={hearingId} caseDetails={caseDetails} hearings={hearings} />)}
+                {/* {activeSection === "proceeding" && (userRole === "Judge" || userRole === "Clerk") && (
+                    <ProceedingJudge caseId={caseId} />
+                )} */}
                 {activeSection === "plaintiff" && <Plaintiff caseId={caseId} />}
                 {activeSection === "witness" && <Witness caseId={caseId} />}
-                {activeSection === "mislleaneousHearing" && <MislleaneousHearing caseId={caseId} />}
                 {activeSection === "casedocs" && <CaseDocs caseId={caseId} />}
             </div>
         </div>

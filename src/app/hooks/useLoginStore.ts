@@ -1,3 +1,149 @@
+// "use client";
+// import { create } from "zustand";
+// import axios from "axios";
+
+// interface AuthState {
+//     email: string;
+//     password: string;
+//     token: string | null;
+//     isAuthenticated: boolean;
+//     loading: boolean;
+//     userRole: string | null;
+//     setUser: (key: "email" | "password", value: string) => void;
+//     setToken: (token: string) => void;
+//     setUserRole: (role: string) => void;
+//     login: () => Promise<void>;
+//     logout: () => void;
+//     checkAuth: () => boolean;
+//     getUserRole: () => string | null;
+// }
+
+// const initializeAuthState = () => {
+//     if (typeof window === "undefined") {
+//         return {
+//             token: null,
+//             isAuthenticated: false,
+//             userRole: null,
+//         };
+//     }
+
+//     const token = localStorage.getItem("authToken");
+//     const userRole = localStorage.getItem("userRole");
+
+//     return {
+//         token,
+//         isAuthenticated: !!token,
+//         userRole,
+//     };
+// };
+
+// const { token, isAuthenticated, userRole } = initializeAuthState();
+
+// export const useLoginStore = create<AuthState>((set, get) => ({
+//     email: "",
+//     password: "",
+//     token: null,
+//     isAuthenticated: false,
+//     loading: false,
+//     userRole: null,
+
+//     setUser: (key, value) => set((state) => ({ ...state, [key]: value })),
+
+//     setToken: (token) => {
+//         if (typeof window !== "undefined") {
+//             console.log("Saving token to localStorage:", token);
+//             localStorage.setItem("authToken", token);
+//         } else {
+//             console.warn("No window object — this is likely running on the server");
+//         }
+//         set({ token, isAuthenticated: !!token });
+//     },
+
+//     setUserRole: (role) => {
+//         if (typeof window !== "undefined") {
+//             console.log("Saving role to localStorage:", role);
+//             localStorage.setItem("userRole", role);
+//         }
+//         set({ userRole: role });
+//     },
+
+//     login: async () => {
+//         const { email, password } = get();
+//         if (!email || !password) return;
+
+//         set({ loading: true });
+// const host = window.location.hostname;
+
+// try {
+//     const response = await axios.post(
+//         `http://${host}:3001/api/v1/auth/sign_in`,
+//         { user: { email, password } }
+//     );
+
+//             const bodyToken = response.data.token;
+//             const authHeader = response.headers['authorization'];
+//             const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+
+//             const token = headerToken || bodyToken;
+
+//             if (!token) {
+//                 throw new Error("No token received");
+//             }
+
+//             const rolesArray = response.data.data?.roles || [];
+//             const role = rolesArray.length > 0 ? rolesArray[0] : null;
+
+//             set({ isAuthenticated: true, token, userRole: role, loading: false });
+
+//             if (typeof window !== "undefined") {
+//                 localStorage.setItem("authToken", token);
+//                 if (role) localStorage.setItem("userRole", role);
+
+//                 axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+//             }
+//         } catch (error) {
+//             console.error("Error logging in:", error);
+//             set({ loading: false });
+//             throw error;
+//         }
+//     },
+
+//     logout: () => {
+//         if (typeof window !== "undefined") {
+//             localStorage.removeItem("authToken");
+//             localStorage.removeItem("userRole");
+//             delete axios.defaults.headers.common['Authorization'];
+//         }
+//         set({
+//             token: null,
+//             isAuthenticated: false,
+//             userRole: null,
+//             email: "",
+//             password: ""
+//         });
+//     },
+
+//     checkAuth: () => {
+//         if (typeof window !== "undefined") {
+//             const token = localStorage.getItem("authToken");
+//             const userRole = localStorage.getItem("userRole");
+
+//             if (token) {
+//                 set({ token, isAuthenticated: true, userRole });
+//                 axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+//                 return true;
+//             }
+//         }
+//         return false;
+//     },
+
+//     getUserRole: () => {
+//         return get().userRole;
+//     },
+// }));
+
+
+
 "use client";
 import { create } from "zustand";
 import axios from "axios";
@@ -9,9 +155,11 @@ interface AuthState {
     isAuthenticated: boolean;
     loading: boolean;
     userRole: string | null;
+    userId: string | null; // ✅ Add this
     setUser: (key: "email" | "password", value: string) => void;
     setToken: (token: string) => void;
     setUserRole: (role: string) => void;
+    setUserId: (id: string) => void; // ✅ Add this
     login: () => Promise<void>;
     logout: () => void;
     checkAuth: () => boolean;
@@ -24,47 +172,54 @@ const initializeAuthState = () => {
             token: null,
             isAuthenticated: false,
             userRole: null,
+            userId: null, // ✅ Add this
         };
     }
 
     const token = localStorage.getItem("authToken");
     const userRole = localStorage.getItem("userRole");
+    const userId = localStorage.getItem("userId");
 
     return {
         token,
         isAuthenticated: !!token,
         userRole,
+        userId, // ✅ Add this
     };
 };
 
-const { token, isAuthenticated, userRole } = initializeAuthState();
+const { token, isAuthenticated, userRole, userId } = initializeAuthState();
 
 export const useLoginStore = create<AuthState>((set, get) => ({
     email: "",
     password: "",
-    token: null,
-    isAuthenticated: false,
+    token,
+    isAuthenticated,
     loading: false,
-    userRole: null,
+    userRole,
+    userId, // ✅ Add this
 
     setUser: (key, value) => set((state) => ({ ...state, [key]: value })),
 
     setToken: (token) => {
         if (typeof window !== "undefined") {
-            console.log("Saving token to localStorage:", token);
             localStorage.setItem("authToken", token);
-        } else {
-            console.warn("No window object — this is likely running on the server");
         }
         set({ token, isAuthenticated: !!token });
     },
 
     setUserRole: (role) => {
         if (typeof window !== "undefined") {
-            console.log("Saving role to localStorage:", role);
             localStorage.setItem("userRole", role);
         }
         set({ userRole: role });
+    },
+
+    setUserId: (id) => {
+        if (typeof window !== "undefined") {
+            localStorage.setItem("userId", id);
+        }
+        set({ userId: id });
     },
 
     login: async () => {
@@ -73,31 +228,38 @@ export const useLoginStore = create<AuthState>((set, get) => ({
 
         set({ loading: true });
 
+        const host = window.location.hostname;
+
         try {
             const response = await axios.post(
-                "http://nganglam.lvh.me:3001/api/v1/auth/sign_in",
+                `http://${host}:3001/api/v1/auth/sign_in`,
                 { user: { email, password } }
             );
 
             const bodyToken = response.data.token;
             const authHeader = response.headers['authorization'];
             const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
-
             const token = headerToken || bodyToken;
 
-            if (!token) {
-                throw new Error("No token received");
-            }
+            if (!token) throw new Error("No token received");
 
             const rolesArray = response.data.data?.roles || [];
             const role = rolesArray.length > 0 ? rolesArray[0] : null;
+            const id = response.data.data.id;
+            console.log("IdDSDS", id)
 
-            set({ isAuthenticated: true, token, userRole: role, loading: false });
+            set({
+                isAuthenticated: true,
+                token,
+                userRole: role,
+                userId: id,
+                loading: false,
+            });
 
             if (typeof window !== "undefined") {
                 localStorage.setItem("authToken", token);
+                localStorage.setItem("userId", id);
                 if (role) localStorage.setItem("userRole", role);
-
                 axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             }
         } catch (error) {
@@ -111,12 +273,14 @@ export const useLoginStore = create<AuthState>((set, get) => ({
         if (typeof window !== "undefined") {
             localStorage.removeItem("authToken");
             localStorage.removeItem("userRole");
+            localStorage.removeItem("userId");
             delete axios.defaults.headers.common['Authorization'];
         }
         set({
             token: null,
             isAuthenticated: false,
             userRole: null,
+            userId: null,
             email: "",
             password: ""
         });
@@ -126,9 +290,10 @@ export const useLoginStore = create<AuthState>((set, get) => ({
         if (typeof window !== "undefined") {
             const token = localStorage.getItem("authToken");
             const userRole = localStorage.getItem("userRole");
+            const userId = localStorage.getItem("userId");
 
             if (token) {
-                set({ token, isAuthenticated: true, userRole });
+                set({ token, isAuthenticated: true, userRole, userId });
                 axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
                 return true;
             }
@@ -136,7 +301,5 @@ export const useLoginStore = create<AuthState>((set, get) => ({
         return false;
     },
 
-    getUserRole: () => {
-        return get().userRole;
-    },
+    getUserRole: () => get().userRole,
 }));

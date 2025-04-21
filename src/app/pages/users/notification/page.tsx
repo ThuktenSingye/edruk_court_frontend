@@ -1,55 +1,144 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { NotificationIcon } from "@/components/ui/notificationIcon";
+import { useEffect, useState } from "react";
+import { useActionCable } from "@/app/context/ActionCableContext";
 import { NotificationItem } from "@/components/common/notification/NotificationItem";
+import { NotificationIcon } from "@/components/ui/notificationIcon";
+import { useLoginStore } from "@/app/hooks/useLoginStore";
 
-interface NotificationData {
+interface Notification {
+    id: number;
     description: string;
     date: string;
-    courseName: string;
-    fileName: string;
-    fileDate: string;
+    court_id: string;
+    read_at: string | null;
+    is_ws?: boolean;
 }
 
-const mockNotifications: NotificationData[] = [
-    {
-        description: "Sample notification description 1. Please check this out.",
-        date: "2025-02-07",
-        courseName: "React Development Course",
-        fileName: "course-material-1.pdf",
-        fileDate: "2025-01-15",
-    },
-    {
-        description: "Sample notification description 2. Please check this out.",
-        date: "2025-02-08",
-        courseName: "Node.js Development Course",
-        fileName: "course-material-2.pdf",
-        fileDate: "2025-01-16",
-    },
-];
-
 export default function NotificationPage() {
-    const [notifications, setNotifications] = useState<NotificationData[]>([]);
+    const { cable } = useActionCable();
+    const [wsNotifications, setWsNotifications] = useState<Notification[]>([]);
+    const [apiNotifications, setApiNotifications] = useState<Notification[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [markingRead, setMarkingRead] = useState<number | null>(null);
+    const userId = useLoginStore((state) => state.userId);
+    const token = useLoginStore.getState().token;
 
+    // Fetch from API
     useEffect(() => {
-        setNotifications(mockNotifications);
-    }, []);
+        const host = window.location.hostname;
 
-    const handleMarkAsRead = (index: number) => {
-        alert(`Notification ${index + 1} marked as read`);
-        // Optional: update status or style later
-    };
+        const fetchNotifications = async () => {
+            try {
+                const response = await fetch(`http://${host}:3000/api/v1/notifications`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                });
 
-    const handleDismiss = (index: number) => {
-        const updated = notifications.filter((_, i) => i !== index);
-        setNotifications(updated);
+                if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+
+                const jsonData = await response.json();
+
+                const formatted: Notification[] = Array.isArray(jsonData?.data) ? jsonData.data.map((item: any) => ({
+                    id: item.id,
+                    description: item.message || `Notification ID ${item.id}`,
+                    date: item.params?.hearing_schedule?.scheduled_date
+                        ? new Date(item.params.hearing_schedule.scheduled_date).toLocaleString()
+                        : "No date",
+                    court_id: item.params?.case?.court_id !== undefined
+                        ? String(item.params.case.court_id)
+                        : "N/A",
+                    read_at: item.read_at
+                })) : [];
+
+                setApiNotifications(formatted);
+            } catch (error) {
+                console.error("Error fetching notifications:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchNotifications();
+    }, [token]);
+
+    // WebSocket subscription
+    useEffect(() => {
+        if (!cable) return undefined;
+
+        const subscription = cable.subscriptions.create(
+            { channel: "NotificationChannel", user_id: userId },
+            {
+                connected: () => console.log("WebSocket connected"),
+                disconnected: () => console.log("WebSocket disconnected"),
+                received: (data) => {
+                    const newNotification: Notification = {
+                        id: Date.now(),
+                        description: data.message || "New notification",
+                        date: new Date().toLocaleString(),
+                        court_id: data.case?.court_id || "N/A",
+                        read_at: null,
+                        is_ws: true
+                    };
+                    setWsNotifications((prev) => [...prev, newNotification]);
+                },
+            }
+        );
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [cable, userId]);
+
+    const markAsRead = async (notificationId: number, isWs: boolean = false) => {
+        if (isWs) {
+            setWsNotifications(prev => prev.filter(n => n.id !== notificationId));
+            return;
+        }
+
+        setMarkingRead(notificationId);
+        try {
+
+            const host = window.location.hostname;
+
+            const response = await fetch(
+                `http://${host}:3001/api/v1/notifications/${notificationId}/mark_as_read`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            if (!response.ok) throw new Error("Failed to mark as read");
+
+            setApiNotifications(prev =>
+                prev.map(n =>
+                    n.id === notificationId ? { ...n, read_at: new Date().toISOString() } : n
+                )
+            );
+        } catch (error) {
+            console.error("Error marking notification as read:", error);
+        } finally {
+            setMarkingRead(null);
+        }
     };
 
     const openPDF = (fileName: string) => {
-        const fileUrl = `/path/to/your/pdfs/${fileName}`; // Replace with actual path
-        window.open(fileUrl, "_blank");
+        window.open(`/pdfs/${fileName}`, "_blank");
     };
+
+    if (loading) return <div className="p-4">Loading notifications...</div>;
+
+    // Fixed the missing parenthesis here
+    const allNotifications = [
+        ...apiNotifications.map(n => ({ ...n, is_ws: false })),
+        ...wsNotifications
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return (
         <div className="p-4 md:p-8 font-poppins">
@@ -57,19 +146,20 @@ export default function NotificationPage() {
                 <p className="text-black font-medium text-md">Notification</p>
                 <NotificationIcon />
             </div>
+
             <div className="space-y-6 md:space-y-8">
-                {notifications.length > 0 ? (
-                    notifications.map((notification, index) => (
+                {allNotifications.length > 0 ? (
+                    allNotifications.map((notification) => (
                         <NotificationItem
-                            key={index}
+                            key={notification.id}
                             notification={notification}
-                            index={index}
-                            onDismiss={handleDismiss}
+                            isMarkingRead={markingRead === notification.id}
+                            onMarkAsRead={() => markAsRead(notification.id, notification.is_ws)}
                             openPDF={openPDF}
                         />
                     ))
                 ) : (
-                    <p>No new notifications.</p>
+                    <p className="text-gray-500">No new notifications</p>
                 )}
             </div>
         </div>

@@ -24,12 +24,11 @@ const Sidebar = () => {
     const { userRole, getUserRole, checkAuth, logout } = useLoginStore();
     const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
-    // Ensure auth state is checked when component mounts
     useEffect(() => {
         checkAuth();
     }, [checkAuth]);
 
-    // Get the current role with fallbacks
+
     const currentRole = userRole || getUserRole() || (typeof window !== 'undefined' ? localStorage.getItem("userRole") : null);
 
     const menuItems = [
@@ -91,7 +90,6 @@ const Sidebar = () => {
                         </div>
                     ))}
 
-                    {/* Logout Button with Confirmation Dialog */}
                     <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
                         <DialogTrigger asChild>
                             <div className="flex items-center space-x-3 px-4 py-2 rounded-md hover:bg-gray-500 cursor-pointer mt-auto mb-4">

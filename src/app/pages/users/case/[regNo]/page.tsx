@@ -1,10 +1,12 @@
-import CaseInfo from "@/components/registrar/cases/CaseInfo";
 import Buttons from "@/components/registrar/cases/Buttons";
 
-export default function CaseDetails({ params }: { params: { regNo: string } }) {
+export default async function CaseDetails({ params }: { params: { regNo: string } }) {
+    const caseId = params.regNo;
+
     return (
         <div className="space-y-4">
-            <Buttons caseId={params.regNo} />
+            {/* You can also pass caseId to CaseInfo if needed */}
+            <Buttons caseId={caseId} hearingId={""} caseDetails={undefined} hearings={[]} />
         </div>
     );
 }

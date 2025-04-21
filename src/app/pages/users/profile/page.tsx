@@ -115,7 +115,9 @@ const ProfilePage = () => {
             setIsLoading(true);
             setError(null);
 
-            const response = await fetch(`http://nganglam.lvh.me:3001/api/v1/users/${userId}/profile`, {
+            const host = window.location.hostname;
+
+            const response = await fetch(`http://${host}:3001/api/v1/users/${userId}/profile`, {
                 headers: getAuthHeaders()
             });
 
@@ -159,6 +161,7 @@ const ProfilePage = () => {
             setError(null);
             setSuccessMessage(null);
 
+
             const payload = {
                 profile: {
                     ...profile,
@@ -170,7 +173,9 @@ const ProfilePage = () => {
                 }
             };
 
-            const response = await fetch(`http://nganglam.lvh.me:3001/api/v1/users/${userId}/profile`, {
+            const host = window.location.hostname;
+
+            const response = await fetch(`http://${host}:3001/${userId}/profile`, {
                 method: "PATCH",
                 headers: getAuthHeaders(),
                 body: JSON.stringify(payload)

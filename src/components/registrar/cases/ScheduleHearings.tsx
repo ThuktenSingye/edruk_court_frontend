@@ -81,7 +81,6 @@ const ScheduleHearingDialog: React.FC<ScheduleHearingDialogProps> = ({
 
 
         try {
-
             const host = window.location.hostname;
 
             const response = await axios.post(
@@ -218,34 +217,6 @@ const ScheduleHearingDialog: React.FC<ScheduleHearingDialogProps> = ({
                                     <X size={24} />
                                 </button>
                             </div>
-
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Select Bench
-                                </label>
-                                <select
-                                    className="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                    value={selectedBench}
-                                    onChange={(e) => setSelectedBench(e.target.value)}
-                                    disabled={benches.length === 1 || isSubmitting}
-                                >
-                                    <option value="">Select a bench</option>
-                                    {benches.map((bench: any) => {
-                                        const judgeInfo = bench.judges?.map(
-                                            (judge: any) =>
-                                                `${judge.first_name ?? ''} ${judge.last_name ?? ''} (ID: ${judge.id})`
-                                        ).join(', ') || 'No Judges';
-
-                                        return (
-                                            <option key={bench.id} value={bench.id}>
-                                                Bench {bench.name} – Judges: {judgeInfo}
-                                            </option>
-                                        );
-                                    })}
-                                </select>
-                            </div>
-
 
                             <div className="space-y-4 mt-4">
                                 <div>

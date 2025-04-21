@@ -1,103 +1,83 @@
 "use client";
-import { useState, ReactNode, useEffect } from "react";
-import { ChevronRight, ChevronDown, FileText } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { ChevronDown, FileText } from "lucide-react";
 import { useLoginStore } from "@/app/hooks/useLoginStore";
+import { useParams } from "next/navigation";
 
-interface CaseDocsProps {
-    caseId: string;
-}
-
-interface Document {
+interface CaseDocument {
     id: number;
-    name: string;
-    path: string;
-    fieldSign: string;
-    signable: boolean;
-    category: string;
+    created_at: string;
+    document_status: string;
+    document_url: string;
+    verified_by_judge: boolean;
 }
 
-// Folder Component
-const Folder = ({ name, children }: { name: string; children?: ReactNode }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    return (
-        <div className="ml-4">
-            <div
-                className="flex items-center cursor-pointer hover:text-blue-500 transition-all duration-200 ease-in-out"
-                onClick={() => setIsOpen(!isOpen)}
-            >
-                {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                <span className="ml-2 font-medium text-gray-800">{name}</span>
-            </div>
-            {isOpen && <div className="pl-4 mt-2">{children}</div>}
-        </div>
-    );
-};
+interface Hearing {
+    id: number;
+    case_id: number;
+    hearing_status: string;
+    hearing_type: {
+        name: string;
+    };
+    case_documents: CaseDocument[];
+    case_evidences: unknown[];
+}
 
-// File Component
-const File = ({
-    name,
-    path,
-    onClick,
-    fieldSign,
-    signable,
-}: {
-    name: string;
-    path: string;
-    onClick: () => void;
-    fieldSign: string;
-    signable: boolean;
-}) => (
-    <div className="flex flex-col items-start ml-8 hover:text-blue-500 cursor-pointer transition-all duration-200 ease-in-out mt-8">
-        <div
-            onClick={onClick}
-            className="flex items-center mb-2"
-        >
-            <FileText size={16} />
-            <a href={`#${path}`} className="ml-2 text-gray-600 hover:text-blue-600">
-                {name}
-            </a>
-        </div>
-    </div>
-);
+export default function CaseDetails() {
+    const params = useParams();
+    const caseId = params.regNo as string; // Using your dynamic route parameter
 
-const CaseDocs = ({ caseId }: CaseDocsProps) => {
+    const [fileUrl, setFileUrl] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [pdfPath, setPdfPath] = useState("");
-    const [documents, setDocuments] = useState<Document[]>([]);
+    const [hearings, setHearings] = useState<Hearing[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const { token } = useLoginStore();
 
-    useEffect(() => {
-        const fetchDocuments = async () => {
-            try {
-                const response = await fetch(`http://nganglam.lvh.me:3001/api/v1/cases/${caseId}/documents`, {
+    const fetchHearings = useCallback(async () => {
+        if (!caseId) return;
+
+        try {
+            setLoading(true);
+            setError(null);
+
+            const host = window.location.hostname;
+
+            const response = await fetch(
+                `http://${host}:3001/api/v1/cases/1/files`,
+                {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
                     },
-                });
-                const data = await response.json();
-
-                if (response.ok && data.status === "ok") {
-                    setDocuments(data.data);
-                } else {
-                    setError("Failed to fetch documents");
                 }
-            } catch (err) {
-                setError("An error occurred while fetching documents");
-            } finally {
-                setLoading(false);
-            }
-        };
+            );
 
-        if (caseId) {
-            fetchDocuments();
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (result.status !== "ok") {
+                throw new Error(result.message || "API returned non-ok status");
+            }
+
+            setHearings(result.data);
+        } catch (err) {
+            console.error("Fetch error:", err);
+            setError(err instanceof Error ? err.message : "Failed to fetch case details");
+        } finally {
+            setLoading(false);
         }
     }, [caseId, token]);
 
-    const openModal = (path: string) => {
-        setPdfPath(path);
+    useEffect(() => {
+        fetchHearings();
+    }, [fetchHearings]);
+
+    const openModal = (url: string) => {
+        setFileUrl(url);
         setIsModalOpen(true);
     };
 
@@ -105,61 +85,98 @@ const CaseDocs = ({ caseId }: CaseDocsProps) => {
         setIsModalOpen(false);
     };
 
-    // Group documents by category
-    const groupedDocuments = documents.reduce((acc, doc) => {
-        if (!acc[doc.category]) {
-            acc[doc.category] = [];
-        }
-        acc[doc.category].push(doc);
-        return acc;
-    }, {} as Record<string, Document[]>);
+    if (loading) {
+        return <div className="p-4 text-center text-gray-500">Loading case details...</div>;
+    }
 
-    if (loading) return <p className="text-center text-gray-600">Loading documents...</p>;
-    if (error) return <p className="text-center text-red-500">{error}</p>;
+    if (error) {
+        return (
+            <div className="p-4 text-red-500">
+                Error: {error}
+                <button
+                    onClick={fetchHearings}
+                    className="ml-2 px-2 py-1 bg-blue-100 text-blue-600 rounded"
+                >
+                    Retry
+                </button>
+            </div>
+        );
+    }
+
+    if (hearings.length === 0) {
+        return <div className="p-4 text-gray-500">No hearings found for this case</div>;
+    }
 
     return (
-        <div className="p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-lg border border-gray-200 mt-8">
-            <Folder name={`Case ID: ${caseId}`}>
-                {Object.entries(groupedDocuments).map(([category, docs]) => (
-                    <Folder key={category} name={category}>
-                        {docs.map((doc) => (
-                            <File
-                                key={doc.id}
-                                name={doc.name}
-                                path={doc.path}
-                                fieldSign={doc.fieldSign}
-                                signable={doc.signable}
-                                onClick={() => openModal(doc.path)}
-                            />
-                        ))}
-                    </Folder>
+        <div className="p-4">
+            <h2 className="text-lg font-semibold mb-4">Case #{caseId} Documents</h2>
+
+            <div className="border rounded-lg p-4">
+                {hearings.map((hearing) => (
+                    <div key={hearing.id} className="mb-6">
+                        <div className="flex items-center font-medium cursor-pointer hover:text-blue-500">
+                            <ChevronDown size={16} className="mr-2" />
+                            {hearing.hearing_type.name} Hearing - {hearing.hearing_status}
+                        </div>
+
+                        <div className="ml-6 mt-2">
+                            {hearing.case_documents.length > 0 ? (
+                                hearing.case_documents.map((doc) => (
+                                    <div
+                                        key={doc.id}
+                                        className="flex items-center py-1 hover:text-blue-500 cursor-pointer"
+                                        onClick={() => openModal(doc.document_url)}
+                                    >
+                                        <FileText size={14} className="mr-2" />
+                                        {doc.document_url.split('/').pop() || 'Document'}
+                                        <span className="text-gray-400 ml-2">({doc.document_status})</span>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-gray-400 text-sm">No documents for this hearing</div>
+                            )}
+                        </div>
+                    </div>
                 ))}
-            </Folder>
+            </div>
 
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-4xl w-full">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-semibold text-gray-800">Document Viewer</h2>
+                    <div className="bg-white rounded-lg p-4 w-full max-w-4xl max-h-[90vh] flex flex-col">
+                        <div className="flex justify-between items-center mb-2">
+                            <h3 className="font-semibold">Document Viewer</h3>
                             <button
                                 onClick={closeModal}
-                                className="text-red-500 hover:text-red-700 font-bold"
+                                className="text-gray-500 hover:text-gray-700"
                             >
-                                X
+                                ✕
                             </button>
                         </div>
-                        <iframe
-                            src={`/${pdfPath}`}
-                            width="100%"
-                            height="600px"
-                            title="Document Viewer"
-                            className="rounded-lg border-2 border-gray-300 shadow-lg"
-                        />
+
+                        <div className="flex-1 overflow-hidden">
+                            {fileUrl.endsWith('.pdf') ? (
+                                <iframe
+                                    src={fileUrl}
+                                    className="w-full h-full border rounded"
+                                    title="Document Viewer"
+                                />
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full">
+                                    <p className="mb-4">Preview not available</p>
+                                    <a
+                                        href={fileUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-3 py-1 bg-blue-500 text-white rounded"
+                                    >
+                                        Download Document
+                                    </a>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
         </div>
     );
-};
-
-export default CaseDocs;
+}
