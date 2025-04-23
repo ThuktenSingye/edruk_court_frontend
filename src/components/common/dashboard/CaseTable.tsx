@@ -64,7 +64,7 @@ const CaseTable: React.FC<CaseTableProps> = ({ userRole }) => {
 
                 const host = window.location.hostname;
 
-                const response = await axios.get(`http://nganglam.lvh.me:3001/api/v1/cases`, {
+                const response = await axios.get(`http://${host}:3001/api/v1/cases`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                         'Content-Type': 'application/json',

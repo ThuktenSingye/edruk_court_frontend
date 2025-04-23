@@ -64,7 +64,7 @@ const Hearings: React.FC<HearingsProps> = ({ selectedHearingId, hearings, caseId
                 const host = window.location.hostname;
 
                 const res = await fetch(
-                    `http://${host}/api/v1/cases/${caseId}/hearings/${selectedHearingId}/notes`,
+                    `http://${host}:3001/api/v1/cases/${caseId}/hearings/${selectedHearingId}/notes`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,

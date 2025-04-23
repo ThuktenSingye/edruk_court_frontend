@@ -27,7 +27,16 @@ interface Case {
     enforcement?: string;
     summary?: string;
     documents?: {
-        visible: boolean; id: number; name: string; date: string; url: string
+        id: number;
+        verified_at: string | null;
+        verified_by_judge: boolean;
+        document_status: string;
+        file: {
+            url: string;
+            filename: string;
+            content_type: string;
+            byte_size: number;
+        };
     }[];
 }
 
@@ -53,18 +62,27 @@ interface CaseInfoProps {
 export default function CaseInfo({ caseId, hearingId, caseDetails, hearings }: CaseInfoProps) {
     const [isEditing, setIsEditing] = useState(false);
     const { userRole } = useLoginStore();
+    const [documents, setDocuments] = useState(() => {
+        if (!caseDetails.documents) return [];
 
-    const [documents, setDocuments] = useState(caseDetails.documents || []);
+        return caseDetails.documents.map((doc) => ({
+            id: doc.id,
+            name: doc.file?.filename || "Untitled",
+            date: new Date().toLocaleDateString(), // You can replace this with `doc.verified_at` if needed
+            visible: true,
+            url: doc.file?.url || "#",
+        }));
+    });
     const [showDialog, setShowDialog] = useState(false);
     const [showAllDocs, setShowAllDocs] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [hearingTypes, setHearingTypes] = useState<{ id: number; name: string }[]>([]);
     const [pdfPath, setPdfPath] = useState("");
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleInputChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
             const { name, value } = e.target;
-            // You can add setCaseDetails logic if needed
         },
         []
     );
@@ -103,7 +121,11 @@ export default function CaseInfo({ caseId, hearingId, caseDetails, hearings }: C
     };
 
     const [benches, setBenches] = useState([]);
+    // Removed duplicate declaration of token
+
+
     const token = useLoginStore((state) => state.token);
+
 
     useEffect(() => {
         const fetchBenches = async () => {
@@ -132,6 +154,40 @@ export default function CaseInfo({ caseId, hearingId, caseDetails, hearings }: C
     }, [token]);
 
 
+    useEffect(() => {
+        const fetchHearingTypes = async () => {
+            try {
+
+                const host = window.location.hostname;
+
+                const url = `http://${host}:3001/api/v1/hearing_types`;
+                console.log("📡 Fetching hearing types from:", url);
+
+                const response = await fetch(url, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                });
+
+                const data = await response.json();
+                console.log("📥 Response Status:", response.status);
+                console.log("📥 Data:", data);
+
+                if (response.ok && data.status === "ok") {
+                    setHearingTypes(data.data);
+                } else {
+                    console.warn("⚠️ Backend returned non-ok status:", data.message);
+                }
+            } catch (error) {
+                console.error("❌ Error in fetchHearingTypes:", error);
+            }
+        };
+
+        fetchHearingTypes();
+    }, [token]);
+
+
 
     return (
         <div className="p-6 max-w-3xl mx-auto space-y-4">
@@ -152,15 +208,21 @@ export default function CaseInfo({ caseId, hearingId, caseDetails, hearings }: C
                     </div>
 
                     <div className="space-y-2">
-                        {Object.entries(caseDetails).map(([key, value], index) => (
-                            <div key={index} className="flex justify-between">
-                                <span className="text-gray-500 font-medium">
-                                    {key.replace(/([A-Z])/g, " $1").trim()}:
-                                </span>
-                                <span className="text-gray-800">{value as string}</span>
-                            </div>
-                        ))}
+                        {Object.entries(caseDetails).map(([key, value], index) => {
+                            if (key === "documents") return null; // ⛔ Skip displaying documents here
+
+                            return (
+                                <div key={index} className="flex justify-between">
+                                    <span className="text-gray-500 font-medium">
+                                        {key.replace(/([A-Z])/g, " $1").trim()}:
+                                    </span>
+                                    <span className="text-gray-800">{String(value)}</span>
+                                </div>
+                            );
+                        })}
+
                     </div>
+
                 </CardContent>
             </Card>
 
@@ -220,19 +282,22 @@ export default function CaseInfo({ caseId, hearingId, caseDetails, hearings }: C
                 </CardContent>
             </Card>
 
-            <div className="flex justify-center space-x-4">
-                <Button className="bg-green-700 text-white px-6" onClick={() => setShowDialog(true)}>
-                    Accept
-                </Button>
-                <Button variant="outline" className="border-green-700 text-green-700 px-6">
-                    Dismiss
-                </Button>
-            </div>
+            {userRole === "Registrar" && (
+                <div className="flex justify-center space-x-4">
+                    <Button className="bg-green-700 text-white px-6" onClick={() => setShowDialog(true)}>
+                        Accept
+                    </Button>
+                    <Button variant="outline" className="border-green-700 text-green-700 px-6">
+                        Dismiss
+                    </Button>
+                </div>
+            )}
 
             {showDialog && (
                 <ScheduleDialog
                     onClose={() => setShowDialog(false)}
                     caseId={caseId}
+                    hearingTypes={hearingTypes}
                     caseNumber=""
                     benches={benches}
                     onScheduleSuccess={(newEvent: any) => {

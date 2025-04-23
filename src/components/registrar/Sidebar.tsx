@@ -1,9 +1,13 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { AiFillAppstore, AiFillFile } from "react-icons/ai";
-import { FaCalendarAlt, FaFileInvoice, FaRegFileAlt, FaSignOutAlt } from "react-icons/fa";
+import {
+    FaCalendarAlt,
+    FaFileInvoice,
+    FaRegFileAlt,
+    FaSignOutAlt,
+} from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { useLoginStore } from "@/app/hooks/useLoginStore";
 import Image from "next/image";
@@ -14,29 +18,32 @@ import {
     DialogTitle,
     DialogDescription,
     DialogFooter,
-    DialogTrigger
+    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 const Sidebar = () => {
     const router = useRouter();
     const pathname = usePathname();
-    const { userRole, getUserRole, checkAuth, logout } = useLoginStore();
+    const { getUserRole, checkAuth, logout } = useLoginStore();
     const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+    const [currentRole, setCurrentRole] = useState<string | null>(null);
 
     useEffect(() => {
         checkAuth();
-    }, [checkAuth]);
 
-
-    const currentRole = userRole || getUserRole() || (typeof window !== 'undefined' ? localStorage.getItem("userRole") : null);
+        // Get user role from store or localStorage
+        const roleFromStore = getUserRole();
+        const roleFromStorage = typeof window !== "undefined" ? localStorage.getItem("userRole") : null;
+        setCurrentRole(roleFromStore || roleFromStorage);
+    }, [getUserRole, checkAuth]);
 
     const menuItems = [
         { name: "Dashboard", path: "/pages/dashboard", icon: <AiFillAppstore /> },
         {
             name: "Cases",
             path: `/pages/users/case?role=${currentRole}`,
-            icon: <AiFillFile />
+            icon: <AiFillFile />,
         },
         { name: "Calendar", path: "/pages/users/calendar", icon: <FaCalendarAlt /> },
         { name: "Order", path: "/pages/users/courtorder", icon: <FaRegFileAlt /> },
@@ -44,11 +51,17 @@ const Sidebar = () => {
     ];
 
     if (currentRole === "Registrar") {
-        menuItems.push({ name: "Bench", path: "/pages/users/bench", icon: <FaFileInvoice /> });
+        menuItems.push({
+            name: "Bench",
+            path: "/pages/users/bench",
+            icon: <FaFileInvoice />,
+        });
     }
 
     useEffect(() => {
-        menuItems.forEach((item) => router.prefetch(item.path));
+        if (currentRole) {
+            menuItems.forEach((item) => router.prefetch(item.path));
+        }
     }, [router, currentRole]);
 
     const handleNavigation = (path: string) => {
@@ -79,11 +92,13 @@ const Sidebar = () => {
                 </div>
 
                 <nav className="flex flex-col space-y-4 overflow-y-auto h-full">
-                    {menuItems.map((item) => (
+                    {currentRole && menuItems.map((item) => (
                         <div
                             key={item.name}
                             onClick={() => handleNavigation(item.path)}
-                            className={`flex items-center space-x-3 px-4 py-2 rounded-md ${pathname.startsWith(item.path.split('?')[0]) ? "bg-gray-300 text-black" : "hover:bg-gray-500"} cursor-pointer`}
+                            className={`flex items-center space-x-3 px-4 py-2 rounded-md ${pathname.startsWith(item.path.split("?")[0])
+                                ? "bg-gray-300 text-black"
+                                : "hover:bg-gray-500"} cursor-pointer`}
                         >
                             <span className="text-xl">{item.icon}</span>
                             <span>{item.name}</span>
@@ -114,7 +129,7 @@ const Sidebar = () => {
                                 <Button
                                     variant="destructive"
                                     onClick={handleLogout}
-                                    className="bg-primary-normal hover:bg-primary-light" // Change to blue color
+                                    className="bg-primary-normal hover:bg-primary-light"
                                 >
                                     Logout
                                 </Button>

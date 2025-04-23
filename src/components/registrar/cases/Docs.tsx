@@ -21,6 +21,9 @@ interface DocumentsProps {
 }
 
 const Documents: React.FC<DocumentsProps> = ({ documents, loadingDocuments }) => {
+
+    const host = window.location.hostname;
+
     return (
         <div className="border rounded-lg p-4 shadow-sm">
             <div className="flex justify-between items-center mb-4">
@@ -45,8 +48,9 @@ const Documents: React.FC<DocumentsProps> = ({ documents, loadingDocuments }) =>
 
                                 <span>{doc.document.filename}</span>
                             </div>
+
                             <a
-                                href={`http://nganglam.lvh.me:3001${doc.document.url}`}
+                                href={`http://${host}:3001${doc.document.url}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >

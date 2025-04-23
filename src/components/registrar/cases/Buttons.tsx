@@ -144,7 +144,8 @@ export default function ProfileButtons({ caseId, hearingId }: CaseInfoProps) {
                 )} */}
                 {activeSection === "plaintiff" && <Plaintiff caseId={caseId} />}
                 {activeSection === "witness" && <Witness caseId={caseId} />}
-                {activeSection === "casedocs" && <CaseDocs caseId={caseId} />}
+                {activeSection === "casedocs" && <CaseDocs caseId={caseId} hearingId={hearingId} />
+                }
             </div>
         </div>
     );

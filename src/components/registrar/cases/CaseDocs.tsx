@@ -23,6 +23,8 @@ interface Hearing {
     case_evidences: unknown[];
 }
 
+
+
 export default function CaseDetails() {
     const params = useParams();
     const caseId = params.regNo as string; // Using your dynamic route parameter
@@ -44,7 +46,7 @@ export default function CaseDetails() {
             const host = window.location.hostname;
 
             const response = await fetch(
-                `http://${host}:3001/api/v1/cases/1/files`,
+                `http://${host}:3001/api/v1/cases/${caseId}/files`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`,

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from "react";
@@ -17,12 +16,14 @@ interface ScheduleHearingDialogProps {
     onClose: () => void;
     onScheduleSuccess: (newEvent: any) => void;
     benches: any[];
+    hearingTypes: { id: number; name: string }[];
 }
 
 const ScheduleHearingDialog: React.FC<ScheduleHearingDialogProps> = ({
     caseId,
     caseNumber,
     onClose,
+    hearingTypes,
     benches,
     onScheduleSuccess,
 }) => {
@@ -31,6 +32,7 @@ const ScheduleHearingDialog: React.FC<ScheduleHearingDialogProps> = ({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [selectedBench, setSelectedBench] = useState<string | number>("");
+    const [selectedHearingTypeId, setSelectedHearingTypeId] = useState<number | null>(null);
 
     const handleSchedule = async () => {
         if (!scheduledDateTime) {
@@ -60,17 +62,14 @@ const ScheduleHearingDialog: React.FC<ScheduleHearingDialogProps> = ({
             return;
         }
 
-        const hearing_type_id = hearingType === "Miscellaneous Hearing" ? 1 : 2;
-
         const payload = {
             hearing: {
                 hearing_status: "pending",
-                hearing_type_id: hearing_type_id,
+                hearing_type_id: selectedHearingTypeId,
                 hearing_schedules_attributes: [
                     {
                         scheduled_date: scheduledDateTime.toISOString(),
-                        schedule_status: "pending",
-                        scheduled_by_id: parseInt(userId),
+                        schedule_status: "pending"
                     },
                 ],
             },
@@ -253,13 +252,16 @@ const ScheduleHearingDialog: React.FC<ScheduleHearingDialogProps> = ({
                                         Hearing Type
                                     </label>
                                     <select
-                                        className="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                        value={hearingType}
-                                        onChange={(e) => setHearingType(e.target.value)}
-                                        disabled={isSubmitting}
+                                        className="border p-2 w-full"
+                                        value={selectedHearingTypeId ?? ""}
+                                        onChange={(e) => setSelectedHearingTypeId(Number(e.target.value))}
                                     >
-                                        <option value="Miscellaneous Hearing">Miscellaneous Hearing</option>
-                                        <option value="Preliminary Hearing">Preliminary Hearing</option>
+                                        <option value="">Select Hearing Type</option>
+                                        {hearingTypes.map((type) => (
+                                            <option key={type.id} value={type.id}>
+                                                {type.name}
+                                            </option>
+                                        ))}
                                     </select>
                                 </div>
 
