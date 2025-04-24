@@ -96,6 +96,7 @@ const ScheduleHearingDialog: React.FC<ScheduleHearingDialogProps> = ({
 
             if (response.status === 201) {
                 setIsSuccess(true);
+                onScheduleSuccess(response.data.data);
                 toast.success("Hearing scheduled successfully!", {
                     position: "top-center",
                     duration: 3000,
@@ -105,6 +106,11 @@ const ScheduleHearingDialog: React.FC<ScheduleHearingDialogProps> = ({
                         fontWeight: '500'
                     }
                 });
+
+                onScheduleSuccess(response.data.data);
+
+
+
 
                 const newEvent = {
                     id: response.data.id || scheduledDateTime.toISOString(),

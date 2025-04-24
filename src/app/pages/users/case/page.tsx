@@ -252,7 +252,6 @@ export default function CaseInfoPage() {
                     <TableHeader>
                         <TableRow className="bg-primary-normal">
                             <TableHead className="font-heading">Reg No</TableHead>
-                            <TableHead className="font-heading">Reg Date</TableHead>
                             <TableHead className="font-heading">Case Title</TableHead>
                             <TableHead className="font-heading">Types</TableHead>
                             <TableHead className="font-heading">Sub Type</TableHead>
@@ -266,7 +265,6 @@ export default function CaseInfoPage() {
                             paginatedCases.map((caseItem) => (
                                 <TableRow key={caseItem.id}>
                                     <TableCell>{caseItem.registration_number}</TableCell>
-                                    <TableCell>{new Date(caseItem.created_at).toLocaleDateString()}</TableCell>
                                     <TableCell>{caseItem.title}</TableCell>
 
                                     <TableCell>{getCaseTypeLabel(caseItem.case_type_id)}</TableCell>
@@ -373,7 +371,6 @@ export default function CaseInfoPage() {
                             <TableHeader>
                                 <TableRow className="bg-primary-normal">
                                     <TableHead className="font-heading">Reg No</TableHead>
-                                    <TableHead className="font-heading">Reg Date</TableHead>
                                     <TableHead className="font-heading">Case Title</TableHead>
                                     <TableHead className="font-heading">Priority</TableHead>
                                     <TableHead className="font-heading">Types</TableHead>
@@ -387,7 +384,6 @@ export default function CaseInfoPage() {
                                     paginatedSecondTableCases.map((caseItem) => (
                                         <TableRow key={caseItem.id}>
                                             <TableCell>{caseItem.registration_number}</TableCell>
-                                            <TableCell>{new Date(caseItem.created_at).toLocaleDateString()}</TableCell>
                                             <TableCell>{caseItem.title}</TableCell>
                                             <TableCell>
                                                 <Badge className={

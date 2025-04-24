@@ -59,7 +59,7 @@ interface CaseInfoProps {
     hearings: Hearing[];
 }
 
-export default function CaseInfo({ caseId, hearingId, caseDetails, hearings }: CaseInfoProps) {
+export default function CaseInfo({ caseId, hearingId, caseDetails, hearings: hearingsProp }: CaseInfoProps) {
     const [isEditing, setIsEditing] = useState(false);
     const { userRole } = useLoginStore();
     const [documents, setDocuments] = useState(() => {
@@ -79,6 +79,7 @@ export default function CaseInfo({ caseId, hearingId, caseDetails, hearings }: C
     const [hearingTypes, setHearingTypes] = useState<{ id: number; name: string }[]>([]);
     const [pdfPath, setPdfPath] = useState("");
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [hearings, setHearings] = useState<Hearing[]>([]);
 
     const handleInputChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -121,7 +122,6 @@ export default function CaseInfo({ caseId, hearingId, caseDetails, hearings }: C
     };
 
     const [benches, setBenches] = useState([]);
-    // Removed duplicate declaration of token
 
 
     const token = useLoginStore((state) => state.token);
@@ -154,38 +154,39 @@ export default function CaseInfo({ caseId, hearingId, caseDetails, hearings }: C
     }, [token]);
 
 
-    useEffect(() => {
-        const fetchHearingTypes = async () => {
-            try {
+    const fetchHearingTypes = useCallback(async () => {
+        try {
+            const host = window.location.hostname;
+            const url = `http://${host}:3001/api/v1/hearing_types`;
+            console.log("📡 Fetching hearing types from:", url);
 
-                const host = window.location.hostname;
+            const response = await fetch(url, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
 
-                const url = `http://${host}:3001/api/v1/hearing_types`;
-                console.log("📡 Fetching hearing types from:", url);
+            const data = await response.json();
+            console.log("📥 Response Status:", response.status);
+            console.log("📥 Data:", data);
 
-                const response = await fetch(url, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                });
-
-                const data = await response.json();
-                console.log("📥 Response Status:", response.status);
-                console.log("📥 Data:", data);
-
-                if (response.ok && data.status === "ok") {
-                    setHearingTypes(data.data);
-                } else {
-                    console.warn("⚠️ Backend returned non-ok status:", data.message);
-                }
-            } catch (error) {
-                console.error("❌ Error in fetchHearingTypes:", error);
+            if (response.ok && data.status === "ok") {
+                setHearingTypes(data.data);
+            } else {
+                console.warn("⚠️ Backend returned non-ok status:", data.message);
             }
-        };
-
-        fetchHearingTypes();
+        } catch (error) {
+            console.error("❌ Error in fetchHearingTypes:", error);
+        }
     }, [token]);
+
+    fetchHearingTypes();
+
+    useEffect(() => {
+        setHearings(hearingsProp);
+    }, [hearingsProp]);
+
 
 
 
@@ -300,8 +301,8 @@ export default function CaseInfo({ caseId, hearingId, caseDetails, hearings }: C
                     hearingTypes={hearingTypes}
                     caseNumber=""
                     benches={benches}
-                    onScheduleSuccess={(newEvent: any) => {
-                        // your logic for scheduling success
+                    onScheduleSuccess={() => {
+                        fetchHearingTypes(); // Refresh the hearings list
                     }}
                 />
             )}

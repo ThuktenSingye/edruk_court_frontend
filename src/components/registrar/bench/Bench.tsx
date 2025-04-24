@@ -75,7 +75,10 @@ export default function Bench() {
     useEffect(() => {
         const fetchBenches = async () => {
             try {
-                const response = await fetch("http://nganglam.lvh.me:3001/api/v1/benches", {
+
+                const host = window.location.hostname;
+
+                const response = await fetch(`http://${host}:3001/api/v1/benches`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                         "Content-Type": "application/json",
@@ -109,12 +112,12 @@ export default function Bench() {
                 {benches.map((bench, index) => (
                     <Card
                         key={bench.id}
-                        className="transition duration-300 ease-in-out transform hover:scale-105 hover:shadow-xl border border-gray-200 hover:border-blue-400 bg-white"
+                        className="transition duration-300 ease-in-out transform hover:scale-105 hover:shadow-xl border border-gray-200 hover:border-green-400 bg-white"
                     >
                         <CardContent className="p-6">
                             {/* Header with Bench and Court Info */}
                             <div className="flex justify-between items-start mb-2">
-                                <h2 className="text-xl font-bold text-blue-600">Bench {toRoman(index + 1)}</h2>
+                                <h2 className="text-xl font-bold text-green-600">Bench {toRoman(index + 1)}</h2>
                                 <div className="text-right text-sm text-gray-700">
                                     <p className="font-semibold">{bench.parent_court.name}</p>
                                     <p className="text-xs italic text-gray-500">{bench.parent_court.court_type}</p>
