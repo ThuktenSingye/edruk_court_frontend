@@ -38,7 +38,7 @@ export default function ProceedingPage({
     const handleTabClick = (id: string) => {
         setSelectedHearingId(id);
     };
-
+    console.log(hearings)
     const selectedHearing = hearings.find(
         (hearing) => hearing.id.toString() === selectedHearingId
     );

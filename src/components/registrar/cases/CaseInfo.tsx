@@ -13,6 +13,7 @@ import { useEffect } from "react";
 import axios from "axios"; // if not using fetch API
 
 interface Case {
+  hearings: any;
   regNo: number;
   regDate: string;
   plaintiff: string;
@@ -190,10 +191,6 @@ export default function CaseInfo({
     }
   }, [token]);
 
-  // useEffect(() => {
-  //   setHearings(hearingsProp);
-  // }, [hearingsProp]);
-
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-4">
       <Card>
@@ -288,7 +285,7 @@ export default function CaseInfo({
         </CardContent>
       </Card>
 
-      {/* Hearings */}
+      {/* Hearings
       <Card>
         <CardContent className="p-6 space-y-4">
           <h2 className="text-lg font-semibold text-green-700">Hearings</h2>
@@ -309,12 +306,12 @@ export default function CaseInfo({
             </ul>
           )}
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* check if user role is registar and hearing schedule does not contain miscellaneous */}
       {userRole === "Registrar" &&
         !caseDetails.hearings?.some(
-          (hearing) => hearing.hearing_type?.toLowerCase() === "miscellaneous"
+          (hearing: { hearing_type: string; }) => hearing.hearing_type?.toLowerCase() === "miscellaneous"
         ) && (
           <div className="flex justify-center space-x-4">
             <Button
@@ -338,7 +335,7 @@ export default function CaseInfo({
           caseNumber=""
           benches={benches}
           onScheduleSuccess={() => {
-            fetchHearingTypes(); // Refresh the hearings list
+            setHearingTypes([]); // Refresh the hearings list
           }}
         />
       )}

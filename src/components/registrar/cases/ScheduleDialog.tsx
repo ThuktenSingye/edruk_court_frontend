@@ -1,4 +1,4 @@
-/** @format */
+
 
 "use client";
 
@@ -110,6 +110,8 @@ const ScheduleHearingDialog: React.FC<ScheduleHearingDialogProps> = ({
         }
       );
 
+      console.log("Schedule Payload:", payload);
+
       console.log("response.stat", response.status);
 
       if (response.status === 201) {
@@ -208,9 +210,8 @@ const ScheduleHearingDialog: React.FC<ScheduleHearingDialogProps> = ({
       {/* Dialog Content */}
       <div className="fixed inset-0 flex justify-center items-center z-50">
         <div
-          className={`bg-white p-6 rounded-lg w-full max-w-md mx-4 border-2 border-green-100 shadow-2xl ${
-            isSubmitting ? "pointer-events-none" : ""
-          }`}>
+          className={`bg-white p-6 rounded-lg w-full max-w-md mx-4 border-2 border-green-100 shadow-2xl ${isSubmitting ? "pointer-events-none" : ""
+            }`}>
           {isSuccess ? (
             <div className="text-center py-8">
               <div className="text-green-600 text-2xl font-semibold mb-4">

@@ -50,10 +50,16 @@ const HearingContent: React.FC<HearingContentProps> = ({
 }) => {
   const [noteList, setNoteList] = useState<Note[]>(notes);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [hearingTypes, setHearingTypes] = useState<
+    { id: number; name: string }[]
+  >([]);
   const [uploading, setUploading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [documentList, setDocumentList] = useState<HearingDocument[]>([]);
   const token = useLoginStore((state) => state.token);
+  const [benches, setBenches] = useState([]);
+  const [hasPreliminaryHearing, setHasPreliminaryHearing] = useState(false);
+
 
   const handleNoteAdded = (newNote: Note) => {
     setNoteList((prev) => [newNote, ...prev]);
@@ -88,6 +94,92 @@ const HearingContent: React.FC<HearingContentProps> = ({
       fetchDocuments();
     }
   }, [token, caseId, hearingId]);
+
+  useEffect(() => {
+    const checkPreliminaryHearing = async () => {
+      try {
+        const host = window.location.hostname;
+        const response = await axios.get(
+          `http://${host}:3001/api/v1/cases/${caseId}/hearings`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.data.status === "ok") {
+          const hearings = response.data.data;
+          const found = hearings.some((hearing: any) => hearing.hearing_type === "Preliminary");
+          setHasPreliminaryHearing(found);
+        }
+      } catch (error) {
+        console.error("Failed to check preliminary hearing:", error);
+      }
+    };
+
+    if (token && caseId) {
+      checkPreliminaryHearing();
+    }
+  }, [token, caseId]);
+
+
+  useEffect(() => {
+    const fetchBenches = async () => {
+      try {
+        const host = window.location.hostname;
+
+        const response = await axios.get(`http://${host}:3001/api/v1/benches`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.data.status === "ok") {
+          console.log("respose", response.data.data);
+          setBenches(response.data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch benches:", error);
+      }
+    };
+
+    if (token) {
+      fetchBenches();
+    }
+  }, [token]);
+
+  useEffect(() => {
+    const fetchHearingTypes = async () => {
+      try {
+        const host = window.location.hostname;
+        const url = `http://${host}:3001/api/v1/hearing_types`;
+        console.log("📡 Fetching hearing types from:", url);
+
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        const data = await response.json();
+        console.log("📥 Response Status:", response.status);
+        console.log("📥 Data:", data);
+
+        if (response.ok && data.status === "ok") {
+          setHearingTypes(data.data);
+        } else {
+          console.warn("⚠️ Backend returned non-ok status:", data.message);
+        }
+      } catch (error) {
+        console.error("❌ Error in fetchHearingTypes:", error);
+      }
+    };
+    if (token) {
+      fetchHearingTypes();
+    }
+  }, [token]);
 
   const uploadDocument = async () => {
     if (!selectedFile || !token) {
@@ -131,7 +223,7 @@ const HearingContent: React.FC<HearingContentProps> = ({
 
   return (
     <div className="max-w-5xl mt-8 shadow-lg">
-      <div className="p-6 space-y-6 h-[87vh] overflow-y-auto">
+      <div className="p-6 space-y-6 overflow-y-auto">
         <h2 className="text-xl -mt-7 font-semibold text-green-800 uppercase">
           {hearingType} Hearing
         </h2>
@@ -139,11 +231,14 @@ const HearingContent: React.FC<HearingContentProps> = ({
         <Documents
           documents={documentList}
           loadingDocuments={loadingDocuments}
+          caseId={Number(caseId)}
+          hearingId={Number(hearingId)}
         />
 
+
         {(hearingType === "Miscellaneous" && userRole === "Registrar") ||
-        (hearingType !== "Miscellaneous" &&
-          (userRole === "Judge" || userRole === "Clerk")) ? (
+          (hearingType !== "Miscellaneous" &&
+            (userRole === "Judge" || userRole === "Clerk")) ? (
           <div className="border p-4 rounded-md shadow-sm space-y-3">
             <h3 className="text-lg font-semibold text-green-800 uppercase">
               Upload Document
@@ -158,7 +253,7 @@ const HearingContent: React.FC<HearingContentProps> = ({
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
           <Notes
             notes={noteList}
             hearingType={hearingType}
@@ -167,53 +262,37 @@ const HearingContent: React.FC<HearingContentProps> = ({
             caseId={caseId}
             hearingId={hearingId}
           />
-
-          <div className="border rounded-lg p-4 shadow-sm">
-            <h3 className="text-lg font-semibold text-green-800 uppercase mb-4">
-              Messages
-            </h3>
-            <div className="space-y-3">
-              {[
-                { sender: "Admin", msg: "New update available" },
-                { sender: "Support", msg: "Your request has been approved" },
-                { sender: "Manager", msg: "Meeting scheduled for tomorrow" },
-              ].map((message, idx) => (
-                <div key={idx} className="bg-gray-100 p-3 rounded-lg">
-                  <p className="text-sm font-bold">{message.sender}</p>
-                  <p className="text-sm">{message.msg}</p>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
-        {(hearingType === "Miscellaneous" && userRole === "Registrar") ||
-        (hearingType !== "Miscellaneous" &&
-          (userRole === "Judge" || userRole === "Clerk")) ? (
-          <div className="flex justify-center space-x-2">
-            <Button
-              className="bg-green-700 text-white px-6"
-              onClick={() => setShowDialog(true)}>
-              Schedule Hearing
-            </Button>
-            <Button
-              variant="outline"
-              className="border-green-700 text-green-700 px-6">
-              Dismiss
-            </Button>
-          </div>
-        ) : null}
+        {!hasPreliminaryHearing &&
+          ((hearingType === "Miscellaneous" && userRole === "Registrar") ||
+            (hearingType !== "Miscellaneous" &&
+              (userRole === "Judge" || userRole === "Clerk"))) && (
+            <div className="flex justify-center space-x-2">
+              <Button
+                className="bg-green-700 text-white px-6"
+                onClick={() => setShowDialog(true)}>
+                Schedule Hearing
+              </Button>
+              <Button
+                variant="outline"
+                className="border-green-700 text-green-700 px-6">
+                Dismiss
+              </Button>
+            </div>
+          )}
+
 
         {showDialog && (
           <ScheduleHearing
             onClose={() => setShowDialog(false)}
             caseId={caseId}
-            caseNumber={""}
-            onScheduleSuccess={function (newEvent: any): void {
-              throw new Error("Function not implemented.");
-            }}
-            benches={[]}
-          />
+            hearingTypes={hearingTypes}
+            caseNumber=""
+            benches={benches}
+            onScheduleSuccess={() => {
+              setHearingTypes([]); // Refresh the hearings list
+            }} />
         )}
       </div>
     </div>

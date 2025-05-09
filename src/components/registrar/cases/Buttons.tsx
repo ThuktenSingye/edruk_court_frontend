@@ -61,6 +61,8 @@ export default function ProfileButtons({ caseId, hearingId }: CaseInfoProps) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+
+    console.log("Hearing", hearings)
     const { setHearings: setHearingStore } = useHearingStore();
 
     useEffect(() => {
