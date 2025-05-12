@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLoginStore } from "@/app/hooks/useLoginStore";
 import { toast } from "react-hot-toast";
+import { getHearingActions } from "@/lib/hearingAction";
 
 interface Note {
     id: number;
@@ -15,6 +16,7 @@ interface NotesProps {
     userRole: string | null;
     caseId: string;
     hearingId: string;
+    hearing_status: string;
 }
 
 const Notes: React.FC<NotesProps> = ({
@@ -24,19 +26,48 @@ const Notes: React.FC<NotesProps> = ({
     userRole,
     caseId,
     hearingId,
+    hearing_status
 }) => {
     const [newNote, setNewNote] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [localNotes, setLocalNotes] = useState<Note[]>(notes);
-
-    useEffect(() => {
-        setLocalNotes(notes);
-    }, [notes]);
+    const [isLoading, setIsLoading] = useState(false);
+    const actions = getHearingActions(hearing_status, hearingType, userRole || '');
 
     const token = useLoginStore((state) => state.token);
-
     const host = window.location.hostname;
+
+    const fetchNotes = async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch(
+                `http://${host}:3001/api/v1/cases/${caseId}/hearings/${hearingId}/notes`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch notes');
+            }
+
+            const data = await response.json();
+            console.log("notess data", data)
+            setLocalNotes(data);
+        } catch (error) {
+            console.error('Error fetching notes:', error);
+            toast.error('Failed to fetch notes');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchNotes();
+    }, [caseId, hearingId]);
 
     const handleAddNote = async () => {
         if (!newNote.trim()) return;
@@ -46,8 +77,6 @@ const Notes: React.FC<NotesProps> = ({
         const endpoint = `http://${host}:3001/api/v1/cases/${caseId}/hearings/${hearingId}/notes`;
 
         try {
-            const token = localStorage.getItem("authToken");
-
             const response = await fetch(endpoint, {
                 method: "POST",
                 headers: {
@@ -56,26 +85,14 @@ const Notes: React.FC<NotesProps> = ({
                 },
                 body: JSON.stringify({ content: newNote }),
             });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to add note: ${errorText}`);
-            }
-
             const data = await response.json();
             console.log("Newly added note:", data);
 
-            // Ensure the newNoteObj contains both content and created_at
-            const newNoteObj: Note = {
-                id: data.id,
-                content: data.content,
-                created_at: data.created_at ?? new Date().toISOString(),
-            };
-
             toast.success("Note added successfully!");
 
-            // Update the localNotes state with the new note
-            setLocalNotes((prevNotes) => [newNoteObj, ...prevNotes]);
+            // Fetch updated notes after adding a new note
+            await fetchNotes();
+
             setNewNote("");
             setDialogOpen(false);
         } catch (err) {
@@ -87,14 +104,14 @@ const Notes: React.FC<NotesProps> = ({
     };
 
     const canAddNote =
-        (hearingType === "Miscellaneous" && userRole === "Registrar") ||
-        (hearingType !== "Miscellaneous" && (userRole === "Judge" || userRole === "Clerk"));
+        (hearingType === "Miscellaneous" && userRole === "Registrar") && (hearing_status != 'completed') ||
+        (hearingType !== "Miscellaneous" && (userRole === "Judge" || userRole === "Clerk") && (hearing_status != 'completed'));
 
     return (
         <div className="border rounded-lg p-4 shadow-sm">
             <h3 className="text-lg font-semibold text-green-800 uppercase mb-4">Notes</h3>
 
-            {canAddNote && (
+            {actions.showAddNote && (
                 <div className="flex justify-end mb-4 -mt-12">
                     <button
                         className="bg-green-700 text-white px-4 py-2 rounded"
@@ -135,7 +152,7 @@ const Notes: React.FC<NotesProps> = ({
                 </div>
             )}
 
-            {loadingNotes ? (
+            {isLoading ? (
                 <p className="text-gray-500">Loading notes...</p>
             ) : localNotes.length > 0 ? (
                 <div className="mt-4 max-h-[230px] overflow-y-auto">

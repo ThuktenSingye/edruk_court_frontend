@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
     Table,
     TableHeader,
@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "react-hot-toast";
 import { Loader2 } from "lucide-react";
 import { useLoginStore } from "@/app/hooks/useLoginStore";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface Profile {
     first_name: string;
@@ -63,7 +64,7 @@ const showSuccessToast = (action: 'added' | 'edited', role: string) => {
     );
 };
 
-const showErrorToast = (action: 'add' | 'edit' | 'fetch', role: string, error?: string) => {
+const showErrorToast = (action: 'add' | 'edit', role: string, error?: string) => {
     toast.error(
         <div className="flex items-center">
             <span className="mr-2">✕</span>
@@ -84,10 +85,9 @@ const showErrorToast = (action: 'add' | 'edit' | 'fetch', role: string, error?: 
     );
 };
 
-const JUDGE_API_URL = "http://localhost:3001/api/v1/admin/users/3";
+const JUDGE_API_URL = "http://localhost:3001/api/v1/admin/users/judge";
 
 const JudgeTable = () => {
-    const [judgeData, setJudgeData] = useState<Judge[]>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [newJudge, setNewJudge] = useState({
@@ -103,12 +103,17 @@ const JudgeTable = () => {
         court_id: ""
     });
     const [editingJudge, setEditingJudge] = useState<Judge | null>(null);
-    const [loading, setLoading] = useState(false);
     const { token } = useLoginStore();
+    const queryClient = useQueryClient();
 
-    const fetchJudgeData = async () => {
-        setLoading(true);
-        try {
+    // Fetch judges with React Query
+    const { data: judgeData = [], isLoading } = useQuery<Judge[]>({
+        queryKey: ['judges'],
+        queryFn: async () => {
+            if (!token) {
+                throw new Error('No authentication token available');
+            }
+
             const response = await fetch(JUDGE_API_URL, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -117,11 +122,19 @@ const JudgeTable = () => {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to fetch judges');
+                const errorData = await response.json().catch(() => null);
+                throw new Error(
+                    errorData?.message ||
+                    `Failed to fetch judges: ${response.status} ${response.statusText}`
+                );
             }
 
             const result = await response.json();
-            const safeData = result?.data?.map((item: any) => ({
+            if (!result?.data) {
+                throw new Error('Invalid response format from server');
+            }
+
+            return result.data.map((item: any) => ({
                 id: item?.id ?? 0,
                 email: item?.email ?? '',
                 profile: {
@@ -134,29 +147,16 @@ const JudgeTable = () => {
                     id: item?.court?.id ?? 0,
                     name: item?.court?.name ?? ''
                 }
-            })) || [];
+            }));
+        },
+        staleTime: 5 * 60 * 1000, // Data stays fresh for 5 minutes
+        gcTime: 30 * 60 * 1000, // Cache is kept for 30 minutes
+    });
 
-            setJudgeData(safeData);
-        } catch (error) {
-            console.error('Fetch error:', error);
-            showErrorToast('fetch', 'Judges', 'Failed to load judges');
-        } finally {
-            setLoading(false);
-        }
-    };
+    // Add judge mutation
+    const addJudgeMutation = useMutation({
+        mutationFn: async (judgeData: typeof newJudge) => {
 
-    useEffect(() => {
-        fetchJudgeData();
-    }, [token]);
-
-    const handleAddJudge = async () => {
-        if (newJudge.password !== newJudge.password_confirmation) {
-            toast.error("Password and confirmation don't match");
-            return;
-        }
-
-        setIsSubmitting(true);
-        try {
             const response = await fetch('http://localhost:3001/api/v1/admin/users', {
                 method: "POST",
                 headers: {
@@ -165,16 +165,16 @@ const JudgeTable = () => {
                 },
                 body: JSON.stringify({
                     user: {
-                        email: newJudge.email,
-                        password: newJudge.password,
-                        password_confirmation: newJudge.password_confirmation,
+                        email: judgeData.email,
+                        password: judgeData.password,
+                        password_confirmation: judgeData.password_confirmation,
                         role: "Judge",
-                        court_id: newJudge.court_id,
+                        court_id: judgeData.court_id,
                         profile_attributes: {
-                            first_name: newJudge.profile.first_name,
-                            last_name: newJudge.profile.last_name,
-                            cid_no: newJudge.profile.cid_no,
-                            phone_number: newJudge.profile.phone_number
+                            first_name: judgeData.profile.first_name,
+                            last_name: judgeData.profile.last_name,
+                            cid_no: judgeData.profile.cid_no,
+                            phone_number: judgeData.profile.phone_number
                         }
                     }
                 })
@@ -185,27 +185,23 @@ const JudgeTable = () => {
                 throw new Error(errorData.message || 'Failed to add judge');
             }
 
-            const result = await response.json();
-            if (result.data) {
-                setJudgeData(prev => [...prev, result.data]);
-                setIsDialogOpen(false);
-                resetForm();
-                showSuccessToast('added', 'Judge');
-            }
-        } catch (error) {
-            console.error("Error adding judge:", error);
-            showErrorToast('add', 'Judge', error instanceof Error ? error.message : undefined);
-        } finally {
-            setIsSubmitting(false);
+            return response.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['judges'] });
+            setIsDialogOpen(false);
+            resetForm();
+            toast.success("Judge added successfully");
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || "Failed to add judge");
         }
-    };
+    });
 
-    const handleEditJudge = async () => {
-        if (!editingJudge?.id) return;
-
-        setIsSubmitting(true);
-        try {
-            const response = await fetch(`${JUDGE_API_URL}/${editingJudge.id}`, {
+    // Edit judge mutation
+    const editJudgeMutation = useMutation({
+        mutationFn: async (judge: Judge) => {
+            const response = await fetch(`${JUDGE_API_URL}/${judge.id}`, {
                 method: "PUT",
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -213,13 +209,13 @@ const JudgeTable = () => {
                 },
                 body: JSON.stringify({
                     user: {
-                        email: editingJudge.email,
-                        court_id: editingJudge.court.id.toString(),
+                        email: judge.email,
+                        court_id: judge.court.id.toString(),
                         profile_attributes: {
-                            first_name: editingJudge.profile.first_name,
-                            last_name: editingJudge.profile.last_name,
-                            cid_no: editingJudge.profile.cid_no,
-                            phone_number: editingJudge.profile.phone_number
+                            first_name: judge.profile.first_name,
+                            last_name: judge.profile.last_name,
+                            cid_no: judge.profile.cid_no,
+                            phone_number: judge.profile.phone_number
                         }
                     }
                 })
@@ -230,19 +226,31 @@ const JudgeTable = () => {
                 throw new Error(errorData.message || 'Failed to update judge');
             }
 
-            const result = await response.json();
-            if (result.data) {
-                setJudgeData(prev => prev.map(judge => judge.id === result.data.id ? result.data : judge));
-                setIsDialogOpen(false);
-                setEditingJudge(null);
-                showSuccessToast('edited', 'Judge');
-            }
-        } catch (error) {
-            console.error("Error updating judge:", error);
-            showErrorToast('edit', 'Judge', error instanceof Error ? error.message : undefined);
-        } finally {
-            setIsSubmitting(false);
+            return response.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['judges'] });
+            setIsDialogOpen(false);
+            setEditingJudge(null);
+            toast.success("Judge updated successfully");
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || "Failed to update judge");
         }
+    });
+
+    const handleAddJudge = async () => {
+        if (newJudge.password !== newJudge.password_confirmation) {
+            toast.error("Password and confirmation don't match");
+            return;
+        }
+
+        addJudgeMutation.mutate(newJudge);
+    };
+
+    const handleEditJudge = async () => {
+        if (!editingJudge?.id) return;
+        editJudgeMutation.mutate(editingJudge);
     };
 
     const resetForm = () => {
@@ -319,7 +327,7 @@ const JudgeTable = () => {
         },
     });
 
-    if (loading) return (
+    if (isLoading) return (
         <div className="flex items-center justify-center p-8">
             <Loader2 className="h-8 w-8 animate-spin" />
             <span className="ml-2">Loading judges...</span>
@@ -334,7 +342,8 @@ const JudgeTable = () => {
                     setEditingJudge(null);
                     resetForm();
                     setIsDialogOpen(true);
-                }}>
+                }}
+                    className="bg-primary-normal hover:bg-primary-normal/90">
                     <FaPlus className="mr-2" /> Add Judge
                 </Button>
             </div>

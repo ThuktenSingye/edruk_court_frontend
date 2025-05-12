@@ -7,7 +7,6 @@ export interface CaseReport {
     month: string;
     openingBalance: number;
     newRegistration: number;
-    totalRegistered: number;
     decidedCases: number;
     pendingCases: number;
     appeal: number;
@@ -26,8 +25,11 @@ export const useFetchCaseReports = () => {
             setIsLoading(true);
             setError("");  // Reset error state
 
+            const host = window.location.hostname;
+
+
             try {
-                const response = await fetch("http://localhost:3002/casereports");
+                const response = await fetch(`http://${host}:3002/casereports`);
 
                 if (!response.ok) {
                     throw new Error("Failed to fetch data");
@@ -51,15 +53,4 @@ export const useFetchCaseReports = () => {
     }, []);
 
     return { data, isLoading, error };
-}; export interface CaseReport {
-    month: string;
-    openingBalance: number;
-    newRegistration: number;
-    totalRegistered: number;
-    decidedCases: number;
-    pendingCases: number;
-    appeal: number;
-    remarks: number;
-    year: number;
-    benchClerk: string;
-}
+};

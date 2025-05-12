@@ -11,6 +11,7 @@ import { useLoginStore } from "@/app/hooks/useLoginStore";
 import Link from "next/link";
 import { useEffect } from "react";
 import axios from "axios"; // if not using fetch API
+import { useHearingStore } from "@/app/hooks/useHearingStore";
 
 interface Case {
   hearings: any;
@@ -69,6 +70,8 @@ export default function CaseInfo({
 }: CaseInfoProps) {
   const [isEditing, setIsEditing] = useState(false);
   const { userRole } = useLoginStore();
+  const { hearings } = useHearingStore();
+  const { setHearings: setHearingStore } = useHearingStore();
   const [documents, setDocuments] = useState(() => {
     if (!caseDetails.documents) return [];
 
@@ -88,7 +91,6 @@ export default function CaseInfo({
   >([]);
   const [pdfPath, setPdfPath] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [hearings, setHearings] = useState<Hearing[]>([]);
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -284,34 +286,10 @@ export default function CaseInfo({
           />
         </CardContent>
       </Card>
-
-      {/* Hearings
-      <Card>
-        <CardContent className="p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-green-700">Hearings</h2>
-          {hearings.length === 0 ? (
-            <p className="text-gray-500">No hearings scheduled yet.</p>
-          ) : (
-            <ul className="space-y-2">
-              {hearings.map((hearing) => (
-                <li
-                  key={hearing.id}
-                  className="flex justify-between items-center border p-3 rounded-md">
-                  <span className="text-gray-700">{hearing.hearing_type}</span>
-                  <Link href={`/proceedings/${caseId}/${hearing.id}`}>
-                    View
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card> */}
-
       {/* check if user role is registar and hearing schedule does not contain miscellaneous */}
       {userRole === "Registrar" &&
-        !caseDetails.hearings?.some(
-          (hearing: { hearing_type: string; }) => hearing.hearing_type?.toLowerCase() === "miscellaneous"
+        !hearings.some(
+          (hearing) => hearing.hearing_type?.toLowerCase() === "miscellaneous"
         ) && (
           <div className="flex justify-center space-x-4">
             <Button
@@ -334,10 +312,27 @@ export default function CaseInfo({
           hearingTypes={hearingTypes}
           caseNumber=""
           benches={benches}
-          onScheduleSuccess={() => {
-            setHearingTypes([]); // Refresh the hearings list
-          }}
-        />
+          onScheduleSuccess={async () => {
+            // Fetch updated hearings list
+            try {
+              const host = window.location.hostname;
+              const response = await axios.get(
+                `http://${host}:3001/api/v1/cases/${caseId}/hearings`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+              if (response.data.status === "ok") {
+                // Update the hearings list in the global store
+                const updatedHearings = response.data.data;
+                setHearingStore(updatedHearings);
+              }
+            } catch (error) {
+              console.error("Failed to refresh hearings:", error);
+            }
+          }} />
       )}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">

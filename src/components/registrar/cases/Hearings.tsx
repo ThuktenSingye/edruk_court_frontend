@@ -38,12 +38,14 @@ interface HearingsProps {
     selectedHearingId: string;
     hearings: Hearing[];
     caseId: string;
+    caseDocuments?: any[];
 }
 
-const Hearings: React.FC<HearingsProps> = ({ selectedHearingId, hearings, caseId }) => {
+const Hearings: React.FC<HearingsProps> = ({ selectedHearingId, hearings, caseId, caseDocuments = [] }) => {
     const selectedHearing = hearings.find(
         (hearing) => hearing.id.toString() === selectedHearingId
     );
+    console.log("hearings")
 
     const [notes, setNotes] = useState<Note[]>([]);
     const [loadingNotes, setLoadingNotes] = useState(false);
@@ -60,7 +62,6 @@ const Hearings: React.FC<HearingsProps> = ({ selectedHearingId, hearings, caseId
 
             setLoadingNotes(true);
             try {
-
                 const host = window.location.hostname;
 
                 const res = await fetch(
@@ -90,25 +91,50 @@ const Hearings: React.FC<HearingsProps> = ({ selectedHearingId, hearings, caseId
 
             setLoadingDocuments(true);
             try {
-
                 const host = window.location.hostname;
 
-                const res = await fetch(
+                if (selectedHearing?.hearing_type.toLowerCase() === "miscellaneous") {
+                    const caseResponse = await fetch(
+                        `http://${host}:3001/api/v1/cases/${caseId}`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        }
+                    );
+                    const caseJson = await caseResponse.json();
 
-
-                    `http://${host}:3001/api/v1/cases/${caseId}/hearings/${selectedHearingId}/documents`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
+                    if (caseJson.status === "ok") {
+                        const caseDocs = caseJson.data.documents.map((doc: any) => ({
+                            id: doc.id,
+                            verified_at: doc.verified_at,
+                            verified_by_judge: doc.verified_by_judge,
+                            document_status: doc.document_status,
+                            document: {
+                                url: doc.file.url,
+                                filename: doc.file.filename,
+                                content_type: doc.file.content_type,
+                                byte_size: doc.file.byte_size
+                            }
+                        }));
+                        setDocuments(caseDocs);
                     }
-                );
-
-                const json = await res.json();
-                if (json.status === "ok") {
-                    setDocuments(json.data);
                 } else {
-                    console.warn("Failed to fetch documents:", json);
+                    const res = await fetch(
+                        `http://${host}:3001/api/v1/cases/${caseId}/hearings/${selectedHearingId}/documents`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        }
+                    );
+
+                    const json = await res.json();
+                    if (json.status === "ok") {
+                        setDocuments(json.data);
+                    } else {
+                        console.warn("Failed to fetch documents:", json);
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching documents:", error);
@@ -119,25 +145,25 @@ const Hearings: React.FC<HearingsProps> = ({ selectedHearingId, hearings, caseId
 
         fetchNotes();
         fetchDocuments();
-    }, [selectedHearingId, caseId, token]);
+    }, [selectedHearingId, caseId, token, caseDocuments, selectedHearing?.hearing_type]);
 
     if (!selectedHearingId) {
         return null;
     }
 
     return (
-        <div >
-            <HearingContent
-                loadingNotes={loadingNotes}
-                notes={notes}
-                hearingType={selectedHearing?.hearing_type || "Hearing"}
-                userRole={userRole}
-                caseId={caseId}
-                hearingId={selectedHearingId}
-                documents={documents}
-                loadingDocuments={loadingDocuments}
-            />
-        </div>
+        <HearingContent
+            loadingNotes={loadingNotes}
+            notes={notes}
+            hearingType={selectedHearing?.hearing_type || "Hearing"}
+            userRole={userRole}
+            caseId={caseId}
+            hearingId={selectedHearingId}
+            documents={documents}
+            loadingDocuments={loadingDocuments}
+            hearing_status={selectedHearing.hearing_status}
+        />
+
     );
 };
 

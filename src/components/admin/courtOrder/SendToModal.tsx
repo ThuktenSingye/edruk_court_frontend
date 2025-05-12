@@ -69,12 +69,10 @@ export const SendToModal = ({ open, onOpenChange, onSend }: SendToModalProps) =>
         },
     });
 
-    const host = window.location.hostname;
-
     useEffect(() => {
         const fetchCourts = async () => {
             try {
-                const res = await axios.get(`http://${host}:3001/api/v1/courts`, {
+                const res = await axios.get("http://supreme.lvh.me:3001/api/v1/courts", {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -159,13 +157,13 @@ export const SendToModal = ({ open, onOpenChange, onSend }: SendToModalProps) =>
                                                         setSendToOption("court");
                                                     }} /> Court
                                             </label>
-                                            <label className="flex items-center gap-2">
+                                            {/* <label className="flex items-center gap-2">
                                                 <input type="radio" value="user" checked={sendToOption === "user"}
                                                     onChange={() => {
                                                         field.onChange("user");
                                                         setSendToOption("user");
                                                     }} /> User
-                                            </label>
+                                            </label> */}
                                         </div>
                                         <FormMessage />
                                     </FormItem>
@@ -195,7 +193,7 @@ export const SendToModal = ({ open, onOpenChange, onSend }: SendToModalProps) =>
                                 />
                             )}
 
-                            {sendToOption === "user" && (
+                            {/* {sendToOption === "user" && (
                                 <FormField
                                     control={form.control}
                                     name="user"
@@ -207,7 +205,7 @@ export const SendToModal = ({ open, onOpenChange, onSend }: SendToModalProps) =>
                                         </FormItem>
                                     )}
                                 />
-                            )}
+                            )} */}
 
                             <div className="flex justify-between mt-4 gap-5">
                                 <Button type="submit" className="bg-primary-normal w-1/2 py-3 text-lg">Send</Button>

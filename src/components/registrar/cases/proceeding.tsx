@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import Hearings from "@/components/registrar/cases/Hearings";
+import { useHearingStore } from "@/app/hooks/useHearingStore";
 
 interface Hearing {
     id: number;
@@ -20,25 +21,29 @@ interface ProceedingPageProps {
     caseId: string;
     hearingId: string;
     hearings: Hearing[];
-    caseDetails: {
-        id: string;
-        title: string;
-        description: string;
-        status: string;
-    }; // Replace with the actual structure of the Case object
+    caseDocuments?: any[];
 }
 
 export default function ProceedingPage({
     caseId,
     hearingId,
-    hearings,
+    hearings: initialHearings,
+    caseDocuments = [],
 }: ProceedingPageProps) {
     const [selectedHearingId, setSelectedHearingId] = useState(hearingId);
+    const { hearings, setHearings } = useHearingStore();
+
+    useEffect(() => {
+        // Initialize hearings in the store if they're not already set
+        if (initialHearings && initialHearings.length > 0) {
+            setHearings(initialHearings);
+        }
+    }, [initialHearings, setHearings]);
 
     const handleTabClick = (id: string) => {
         setSelectedHearingId(id);
     };
-    console.log(hearings)
+
     const selectedHearing = hearings.find(
         (hearing) => hearing.id.toString() === selectedHearingId
     );
@@ -66,13 +71,13 @@ export default function ProceedingPage({
 
             {/* Main Content */}
             <main className="flex-1 p-10 -mt-4">
-                <Card className="max-w-3xl mx-auto shadow-lg">
-                    <Hearings selectedHearingId={selectedHearingId} hearings={hearings} caseId={caseId} />
-                </Card>
+                <Hearings
+                    selectedHearingId={selectedHearingId}
+                    hearings={hearings}
+                    caseId={caseId}
+                    caseDocuments={caseDocuments}
+                />
             </main>
-
-
         </div>
-
     );
 }

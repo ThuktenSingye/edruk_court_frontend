@@ -32,7 +32,7 @@ const LoginPage: React.FC = () => {
 
     const redirectUser = () => {
         if (userRole === "Admin") {
-            router.push("/pages/admin");
+            router.push("/pages/admin/court");
         } else {
             router.push("/pages/dashboard");
         }

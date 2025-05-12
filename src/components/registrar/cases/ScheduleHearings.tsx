@@ -35,19 +35,24 @@ const ScheduleHearingDialog: React.FC<ScheduleHearingDialogProps> = ({
     const [selectedBench, setSelectedBench] = useState<string | number>("");
     const [availableClerks, setAvailableClerks] = useState<any[]>([]);
     const [selectedClerk, setSelectedClerk] = useState<string>("");
-    const [selectedHearingTypeId, setSelectedHearingTypeId] = useState<
-        number | null
-    >(null);
+    const [selectedHearingTypeId, setSelectedHearingTypeId] = useState<number | null>(null);
     const [availableJudges, setAvailableJudges] = useState<any[]>([]);
     const [selectedJudge, setSelectedJudge] = useState<string>("");
+    const [isMiscellaneous, setIsMiscellaneous] = useState(false);
 
     useEffect(() => {
         const bench = benches.find((b) => b.id.toString() === selectedBench);
         setAvailableJudges(bench?.judges || []);
-        setAvailableClerks(bench?.clerks || []); // Add this
+        setAvailableClerks(bench?.clerks || []);
         setSelectedJudge("");
         setSelectedClerk("");
     }, [selectedBench, benches]);
+
+    useEffect(() => {
+        const selectedType = hearingTypes.find(type => type.id === selectedHearingTypeId);
+        setIsMiscellaneous(selectedType?.name.toLowerCase() === "miscellaneous");
+    }, [selectedHearingTypeId, hearingTypes]);
+
     const handleSchedule = async () => {
         if (!scheduledDateTime) {
             toast.error("Please select a date and time", {
@@ -80,9 +85,11 @@ const ScheduleHearingDialog: React.FC<ScheduleHearingDialogProps> = ({
             hearing: {
                 hearing_status: "pending",
                 hearing_type_id: selectedHearingTypeId,
-                bench_id: selectedBench,
-                judge_id: selectedJudge,
-                clerk_id: selectedClerk,
+                ...(isMiscellaneous ? {} : {
+                    bench_id: selectedBench,
+                    judge_id: selectedJudge,
+                    clerk_id: selectedClerk,
+                }),
                 hearing_schedules_attributes: [
                     {
                         scheduled_date: scheduledDateTime.toISOString(),
@@ -91,7 +98,6 @@ const ScheduleHearingDialog: React.FC<ScheduleHearingDialogProps> = ({
                 ],
             },
         };
-
 
         setIsSubmitting(true);
 
@@ -239,31 +245,7 @@ const ScheduleHearingDialog: React.FC<ScheduleHearingDialogProps> = ({
                             </div>
 
                             <div>
-                                {
-                                    /* <select
-                                    className="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                    value={selectedBench}
-                                    onChange={(e) => setSelectedBench(e.target.value)}
-                                    disabled={benches.length === 1 || isSubmitting}>
-                                    <option value="">Select a bench</option>
-                                    {benches.map((bench: any) => {
-                                      const judgeInfo =
-                                        bench.judges
-                                          ?.map(
-                                            (judge: any) =>
-                                              `${judge.first_name ?? ""} ${
-                                                judge.last_name ?? ""
-                                              } (ID: ${judge.id})`
-                                          )
-                                          .join(", ") || "No Judges";
-                  
-                                      return (
-                                        <option key={bench.id} value={bench.id}>
-                                          Bench {bench.name} – Judges: {judgeInfo}
-                                        </option>
-                                      );
-                                    })}
-                                  </select> */
+                                {!isMiscellaneous && (
                                     <div className="space-y-4">
                                         {/* Bench Dropdown */}
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -315,7 +297,7 @@ const ScheduleHearingDialog: React.FC<ScheduleHearingDialogProps> = ({
                                             ))}
                                         </select>
                                     </div>
-                                }
+                                )}
                             </div>
 
                             <div className="space-y-4 mt-4">

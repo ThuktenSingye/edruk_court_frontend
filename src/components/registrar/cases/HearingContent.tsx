@@ -8,6 +8,8 @@ import { useLoginStore } from "@/app/hooks/useLoginStore";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import ScheduleHearing from "@/components/registrar/cases/ScheduleHearings";
+import { useHearingStore } from "@/app/hooks/useHearingStore";
+import { getHearingActions } from "@/lib/hearingAction";
 
 interface Note {
   id: number;
@@ -37,6 +39,7 @@ interface HearingContentProps {
   hearingId: string;
   documents: HearingDocument[];
   loadingDocuments: boolean;
+  hearing_status: string;
 }
 
 const HearingContent: React.FC<HearingContentProps> = ({
@@ -46,7 +49,9 @@ const HearingContent: React.FC<HearingContentProps> = ({
   userRole,
   caseId,
   hearingId,
+  documents,
   loadingDocuments,
+  hearing_status
 }) => {
   const [noteList, setNoteList] = useState<Note[]>(notes);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -55,11 +60,17 @@ const HearingContent: React.FC<HearingContentProps> = ({
   >([]);
   const [uploading, setUploading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
-  const [documentList, setDocumentList] = useState<HearingDocument[]>([]);
+  const [documentList, setDocumentList] = useState<HearingDocument[]>(documents);
   const token = useLoginStore((state) => state.token);
   const [benches, setBenches] = useState([]);
   const [hasPreliminaryHearing, setHasPreliminaryHearing] = useState(false);
+  const { setHearings: setHearingStore } = useHearingStore();
+  const actions = getHearingActions(hearing_status, hearingType, userRole || "");
 
+
+  useEffect(() => {
+    setDocumentList(documents);
+  }, [documents]);
 
   const handleNoteAdded = (newNote: Note) => {
     setNoteList((prev) => [newNote, ...prev]);
@@ -164,8 +175,6 @@ const HearingContent: React.FC<HearingContentProps> = ({
         });
 
         const data = await response.json();
-        console.log("📥 Response Status:", response.status);
-        console.log("📥 Data:", data);
 
         if (response.ok && data.status === "ok") {
           setHearingTypes(data.data);
@@ -191,8 +200,8 @@ const HearingContent: React.FC<HearingContentProps> = ({
     const timestamp = new Date().toISOString();
 
     formData.append("document[document]", selectedFile);
-    formData.append("document[hash_value]", timestamp);
-    formData.append("document[document_status]", "pending");
+    // formData.append("document[hash_value]", timestamp);
+    // formData.append("document[document_status]", "pending");
 
     setUploading(true);
     try {
@@ -221,80 +230,123 @@ const HearingContent: React.FC<HearingContentProps> = ({
     }
   };
 
+
+
+
   return (
-    <div className="max-w-5xl mt-8 shadow-lg">
-      <div className="p-6 space-y-6 overflow-y-auto">
-        <h2 className="text-xl -mt-7 font-semibold text-green-800 uppercase">
-          {hearingType} Hearing
-        </h2>
+    <div className="p-6 space-y-6 overflow-y-auto">
+      <h2 className="text-xl -mt-7 font-semibold text-green-800 uppercase">
+        {hearingType} Hearing
+      </h2>
 
-        <Documents
-          documents={documentList}
-          loadingDocuments={loadingDocuments}
-          caseId={Number(caseId)}
-          hearingId={Number(hearingId)}
-        />
+      <Documents
+        documents={documentList}
+        loadingDocuments={loadingDocuments}
+        caseId={Number(caseId)}
+        userRole={userRole}
+        hearingId={Number(hearingId)}
+        hearingType={hearingType}
+        hearing_status={hearing_status}
+      />
 
-
-        {(hearingType === "Miscellaneous" && userRole === "Registrar") ||
-          (hearingType !== "Miscellaneous" &&
-            (userRole === "Judge" || userRole === "Clerk")) ? (
-          <div className="border p-4 rounded-md shadow-sm space-y-3">
+      {/* {hearingType !== "Miscellaneous" && (userRole === "Judge" || userRole === "Clerk") ? (
+        <div className="border p-4 rounded-md shadow-sm space-y-3">
+          {hearing_status != 'completed' && <>
             <h3 className="text-lg font-semibold text-green-800 uppercase">
-              Upload Document
-            </h3>
-            <input type="file" onChange={handleFileChange} />
-            <button
-              onClick={uploadDocument}
-              disabled={uploading || !selectedFile}
-              className="bg-green-700 hover:bg-green-800 text-white font-semibold py-2 px-4 rounded-lg shadow disabled:opacity-50">
-              {uploading ? "Uploading..." : "Upload Document"}
-            </button>
-          </div>
-        ) : null}
+              <h3 className="text-lg font-semibold text-green-800 uppercase">
+                Upload Document
+              </h3></h3>
+          </>}
 
-        <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-          <Notes
-            notes={noteList}
-            hearingType={hearingType}
-            loadingNotes={loadingNotes}
-            userRole={userRole}
-            caseId={caseId}
-            hearingId={hearingId}
-          />
+          <input type="file" onChange={handleFileChange} />
+          <button
+            onClick={uploadDocument}
+            disabled={uploading || !selectedFile}
+            className="bg-green-700 hover:bg-green-800 text-white font-semibold py-2 px-4 rounded-lg shadow disabled:opacity-50">
+            {uploading ? "Uploading..." : "Upload Document"}
+          </button>
         </div>
+      ) : null} */}
+      {actions.showUpload && (
+        <div className="border p-4 rounded-md shadow-sm space-y-3">
+          <h3 className="text-lg font-semibold text-green-800 uppercase">
+            Upload Document
+          </h3>
 
-        {!hasPreliminaryHearing &&
-          ((hearingType === "Miscellaneous" && userRole === "Registrar") ||
-            (hearingType !== "Miscellaneous" &&
-              (userRole === "Judge" || userRole === "Clerk"))) && (
-            <div className="flex justify-center space-x-2">
-              <Button
-                className="bg-green-700 text-white px-6"
-                onClick={() => setShowDialog(true)}>
-                Schedule Hearing
-              </Button>
-              <Button
-                variant="outline"
-                className="border-green-700 text-green-700 px-6">
-                Dismiss
-              </Button>
-            </div>
-          )}
+          <input type="file" onChange={handleFileChange} />
+          <button
+            onClick={uploadDocument}
+            disabled={uploading || !selectedFile}
+            className="bg-green-700 hover:bg-green-800 text-white font-semibold py-2 px-4 rounded-lg shadow disabled:opacity-50"
+          >
+            {uploading ? "Uploading..." : "Upload Document"}
+          </button>
+        </div>
+      )}
 
-
-        {showDialog && (
-          <ScheduleHearing
-            onClose={() => setShowDialog(false)}
-            caseId={caseId}
-            hearingTypes={hearingTypes}
-            caseNumber=""
-            benches={benches}
-            onScheduleSuccess={() => {
-              setHearingTypes([]); // Refresh the hearings list
-            }} />
-        )}
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+        <Notes
+          notes={noteList}
+          hearingType={hearingType}
+          loadingNotes={loadingNotes}
+          userRole={userRole}
+          caseId={caseId}
+          hearing_status={hearing_status}
+          hearingId={hearingId}
+        />
       </div>
+
+      {actions.showScheduleNext &&
+        (hearingType === "Preliminary" || !hasPreliminaryHearing) && (
+          <div className="flex justify-center space-x-2">
+            <Button
+              className="bg-green-700 text-white px-6"
+              onClick={() => setShowDialog(true)}
+            >
+              Schedule Hearing
+            </Button>
+            <Button
+              variant="outline"
+              className="border-green-700 text-green-700 px-6"
+            >
+              Dismiss
+            </Button>
+          </div>
+        )}
+
+
+      {showDialog && (
+        <ScheduleHearing
+          onClose={() => setShowDialog(false)}
+          caseId={caseId}
+          hearingTypes={hearingTypes}
+          caseNumber=""
+          benches={benches}
+          onScheduleSuccess={async () => {
+            // Fetch updated hearings list
+            try {
+              const host = window.location.hostname;
+              const response = await axios.get(
+                `http://${host}:3001/api/v1/cases/${caseId}/hearings`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+              if (response.data.status === "ok") {
+                // Update the hearings list in the global store
+                const updatedHearings = response.data.data;
+                setHearingStore(updatedHearings);
+                // Also update the preliminary hearing check
+                const found = updatedHearings.some((hearing: any) => hearing.hearing_type === "Preliminary");
+                setHasPreliminaryHearing(found);
+              }
+            } catch (error) {
+              console.error("Failed to refresh hearings:", error);
+            }
+          }} />
+      )}
     </div>
   );
 };

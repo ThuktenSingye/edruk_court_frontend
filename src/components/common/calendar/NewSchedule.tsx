@@ -72,7 +72,7 @@ export default function NewSchedule() {
 
       setProcessing((prev) => ({ ...prev, [schedule.id]: true }));
 
-      const url = `http://${host}:3001/api/v1/cases/1/hearings/288/hearing_schedules/${schedule.id}`;
+      const url = `http://${host}:3001/api/v1/cases/${schedule.case_id}/hearings/${schedule.hearing_id}/hearing_schedules/${schedule.id}`;
 
       const response = await fetch(url, {
         method: "PATCH",

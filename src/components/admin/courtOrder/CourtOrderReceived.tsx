@@ -49,12 +49,11 @@ export const CourtOrdersReceived = () => {
     const [openDialogId, setOpenDialogId] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const token = useLoginStore((state) => state.token);
-    const host = window.location.hostname;
 
     useEffect(() => {
         const fetchReceivedOrders = async () => {
             try {
-                const response = await fetch(`http://${host}:3001/api/v1/court_orders/received`, {
+                const response = await fetch("http://localhost:3001/api/v1/court_orders/received", {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },

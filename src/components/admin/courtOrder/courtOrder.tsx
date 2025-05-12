@@ -61,7 +61,7 @@ export const CourtOrder = () => {
     useEffect(() => {
         const fetchSentCourtOrders = async () => {
             try {
-                const response = await axios.get("http://nganglam.lvh.me:3001/api/v1/court_orders/sent", {
+                const response = await axios.get("http://localhost:3001/api/v1/court_orders/sent", {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -112,10 +112,8 @@ export const CourtOrder = () => {
             console.log(`${key}:`, val instanceof File ? val.name : val);
         }
 
-        const host = window.location.hostname;
-
         try {
-            const response = await fetch(`http://${host}:3001/api/v1/court_orders`, {
+            const response = await fetch("http://nganglam.lvh.me:3001/api/v1/court_orders", {
                 method: "POST",
                 body: formData,
                 headers: {
