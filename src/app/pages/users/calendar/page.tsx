@@ -34,6 +34,7 @@ const Calendar: React.FC = () => {
   const [isPosting, setIsPosting] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState<string>("");
   const eventsPerPage = 5;
+  const userRole = useLoginStore((state) => state.userRole);
 
   const handleDateClick = (selected: any) => {
     if (isPosting) return;
@@ -129,7 +130,7 @@ const Calendar: React.FC = () => {
         }`}>
         {" "}
         <div className="bg-white rounded-xl shadow-md p-6">
-          <NewSchedule />
+          {userRole == "Judge" && <NewSchedule />}
         </div>
         <div
           className={`bg-white rounded-xl shadow-md p-6 ${

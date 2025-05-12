@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import ScheduleHearing from "@/components/registrar/cases/ScheduleHearings";
 import { useHearingStore } from "@/app/hooks/useHearingStore";
 import { getHearingActions } from "@/lib/hearingAction";
+import ScheduleHearingWithDetails from "./SchedulePostHearing";
 
 interface Note {
   id: number;
@@ -51,7 +52,7 @@ const HearingContent: React.FC<HearingContentProps> = ({
   hearingId,
   documents,
   loadingDocuments,
-  hearing_status
+  hearing_status,
 }) => {
   const [noteList, setNoteList] = useState<Note[]>(notes);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -60,13 +61,20 @@ const HearingContent: React.FC<HearingContentProps> = ({
   >([]);
   const [uploading, setUploading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
-  const [documentList, setDocumentList] = useState<HearingDocument[]>(documents);
+  const [documentList, setDocumentList] =
+    useState<HearingDocument[]>(documents);
   const token = useLoginStore((state) => state.token);
   const [benches, setBenches] = useState([]);
   const [hasPreliminaryHearing, setHasPreliminaryHearing] = useState(false);
   const { setHearings: setHearingStore } = useHearingStore();
-  const actions = getHearingActions(hearing_status, hearingType, userRole || "");
+  const actions = getHearingActions(
+    hearing_status,
+    hearingType,
+    userRole || ""
+  );
 
+  console.log("actions", hearing_status, hearingType, userRole);
+  console.log("actions clerk", actions.showScheduleNext);
 
   useEffect(() => {
     setDocumentList(documents);
@@ -121,7 +129,9 @@ const HearingContent: React.FC<HearingContentProps> = ({
 
         if (response.data.status === "ok") {
           const hearings = response.data.data;
-          const found = hearings.some((hearing: any) => hearing.hearing_type === "Preliminary");
+          const found = hearings.some(
+            (hearing: any) => hearing.hearing_type === "Preliminary"
+          );
           setHasPreliminaryHearing(found);
         }
       } catch (error) {
@@ -133,7 +143,6 @@ const HearingContent: React.FC<HearingContentProps> = ({
       checkPreliminaryHearing();
     }
   }, [token, caseId]);
-
 
   useEffect(() => {
     const fetchBenches = async () => {
@@ -230,8 +239,45 @@ const HearingContent: React.FC<HearingContentProps> = ({
     }
   };
 
+  const handleCaseClose = async () => {
+    if (!token) {
+      alert("Please log in to close the case.");
+      return;
+    }
 
+    try {
+      const host = window.location.hostname;
 
+      // Create FormData and populate it with the required fields
+      const formData = new FormData();
+      formData.append("case[case_status]", "closed");
+      formData.append(
+        "case[judgement_number]",
+        Math.floor(Math.random() * 1000000).toString()
+      ); // Random judgment number
+
+      const response = await axios.put(
+        `http://${host}:3001/api/v1/cases/${caseId}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      if (response.data.status === "ok") {
+        alert("Case closed successfully!");
+        // Optionally, you can show a toast notification here
+      } else {
+        alert("Failed to close the case.");
+      }
+    } catch (error) {
+      console.error("Error closing case:", error);
+      alert("Failed to close the case.");
+    }
+  };
 
   return (
     <div className="p-6 space-y-6 overflow-y-auto">
@@ -277,8 +323,7 @@ const HearingContent: React.FC<HearingContentProps> = ({
           <button
             onClick={uploadDocument}
             disabled={uploading || !selectedFile}
-            className="bg-green-700 hover:bg-green-800 text-white font-semibold py-2 px-4 rounded-lg shadow disabled:opacity-50"
-          >
+            className="bg-green-700 hover:bg-green-800 text-white font-semibold py-2 px-4 rounded-lg shadow disabled:opacity-50">
             {uploading ? "Uploading..." : "Upload Document"}
           </button>
         </div>
@@ -296,57 +341,86 @@ const HearingContent: React.FC<HearingContentProps> = ({
         />
       </div>
 
-      {actions.showScheduleNext &&
-        (hearingType === "Preliminary" || !hasPreliminaryHearing) && (
-          <div className="flex justify-center space-x-2">
-            <Button
-              className="bg-green-700 text-white px-6"
-              onClick={() => setShowDialog(true)}
-            >
-              Schedule Hearing
-            </Button>
-            <Button
-              variant="outline"
-              className="border-green-700 text-green-700 px-6"
-            >
-              Dismiss
-            </Button>
-          </div>
-        )}
-
-
-      {showDialog && (
-        <ScheduleHearing
-          onClose={() => setShowDialog(false)}
-          caseId={caseId}
-          hearingTypes={hearingTypes}
-          caseNumber=""
-          benches={benches}
-          onScheduleSuccess={async () => {
-            // Fetch updated hearings list
-            try {
-              const host = window.location.hostname;
-              const response = await axios.get(
-                `http://${host}:3001/api/v1/cases/${caseId}/hearings`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                }
-              );
-              if (response.data.status === "ok") {
-                // Update the hearings list in the global store
-                const updatedHearings = response.data.data;
-                setHearingStore(updatedHearings);
-                // Also update the preliminary hearing check
-                const found = updatedHearings.some((hearing: any) => hearing.hearing_type === "Preliminary");
-                setHasPreliminaryHearing(found);
-              }
-            } catch (error) {
-              console.error("Failed to refresh hearings:", error);
-            }
-          }} />
+      {actions.showScheduleNext && (
+        <div className="flex justify-center space-x-2">
+          <Button
+            className="bg-green-700 text-white px-6"
+            onClick={() => setShowDialog(true)}>
+            Schedule Hearing
+          </Button>
+          <Button
+            variant="outline"
+            className="border-green-700 text-green-700 px-6">
+            Dismiss
+          </Button>
+        </div>
       )}
+      {hearingType == "Judgement" && hearing_status != "completed" && (
+        <div className="flex justify-center space-x-2">
+          <Button
+            className="bg-green-700 text-white px-6"
+            onClick={() => handleCaseClose()}>
+            Close Case
+          </Button>
+        </div>
+      )}
+
+      {showDialog &&
+        (hearingType === "preliminary" ? (
+          <ScheduleHearing
+            onClose={() => setShowDialog(false)}
+            caseId={caseId}
+            hearingTypes={hearingTypes}
+            caseNumber=""
+            benches={benches}
+            onScheduleSuccess={async () => {
+              // Fetch updated hearings list
+              try {
+                const host = window.location.hostname;
+                const response = await axios.get(
+                  `http://${host}:3001/api/v1/cases/${caseId}/hearings`,
+                  {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  }
+                );
+                if (response.data.status === "ok") {
+                  const updatedHearings = response.data.data;
+                  setHearingStore(updatedHearings);
+                }
+              } catch (error) {
+                console.error("Failed to refresh hearings:", error);
+              }
+            }}
+          />
+        ) : (
+          <ScheduleHearingWithDetails
+            onClose={() => setShowDialog(false)}
+            caseId={caseId}
+            hearingTypes={hearingTypes}
+            onScheduleSuccess={async () => {
+              // Fetch updated hearings list
+              try {
+                const host = window.location.hostname;
+                const response = await axios.get(
+                  `http://${host}:3001/api/v1/cases/${caseId}/hearings`,
+                  {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  }
+                );
+                if (response.data.status === "ok") {
+                  const updatedHearings = response.data.data;
+                  setHearingStore(updatedHearings);
+                }
+              } catch (error) {
+                console.error("Failed to refresh hearings:", error);
+              }
+            }}
+          />
+        ))}
     </div>
   );
 };
