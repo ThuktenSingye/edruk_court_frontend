@@ -7,7 +7,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import toast, { Toaster } from "react-hot-toast";
+import { Toaster } from "react-hot-toast";
 import axios from "axios";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -17,7 +17,6 @@ import EventDialog from "@/components/common/calendar/EventDialog";
 import EventDetailsDialog from "@/components/common/calendar/EventDetailsDialog";
 import EventTable from "@/components/common/calendar/EventTable";
 import { useLoginStore } from "@/app/hooks/useLoginStore";
-import NewSchedule from "@/components/common/calendar/NewSchedule";
 
 const Calendar: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -29,12 +28,9 @@ const Calendar: React.FC = () => {
   const [hearingType, setHearingType] = useState("Miscellaneous Hearing");
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [eventStart, setEventStart] = useState<Date | undefined>();
-  const [currentPage, setCurrentPage] = useState(1);
   const [currentEvents, setCurrentEvents] = useState<any[]>([]);
   const [isPosting, setIsPosting] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState<string>("");
-  const eventsPerPage = 5;
-  const userRole = useLoginStore((state) => state.userRole);
 
   const handleDateClick = (selected: any) => {
     if (isPosting) return;
@@ -65,9 +61,10 @@ const Calendar: React.FC = () => {
         return;
       }
 
+      const host = window.location.hostname;
       try {
         const response = await axios.get(
-          `http://nganglam.lvh.me:3001/api/v1/hearing_schedules/month${
+          `http://${host}:3001/api/v1/hearing_schedules/month${
             calendarMonth ? `?month=${calendarMonth}` : ""
           }`,
           {
@@ -128,10 +125,6 @@ const Calendar: React.FC = () => {
         className={`bg-gray-100 min-h-screen p-6 ${
           isPosting ? "pointer-events-none" : ""
         }`}>
-        {" "}
-        <div className="bg-white rounded-xl shadow-md p-6">
-          {userRole == "Judge" && <NewSchedule />}
-        </div>
         <div
           className={`bg-white rounded-xl shadow-md p-6 ${
             isPosting ? "opacity-90" : ""

@@ -1,58 +1,59 @@
+/** @format */
+"use client";
 import Sidebar from "../../../components/registrar/Sidebar";
 import { Switch } from "@/components/ui/switch";
 import { Bell, UserCircle } from "lucide-react";
 import Link from "next/link";
 import ProtectedRoute from "@/components/common/ProtectedRoute";
 import { ActionCableProvider } from "@/app/context/ActionCableContext"; // ✅ Add this import
+import { useLoginStore } from "@/app/hooks/useLoginStore";
 
 export default function RootLayout({
-    children,
+  children,
 }: Readonly<{
-    children: React.ReactNode;
+  children: React.ReactNode;
 }>) {
-    return (
-        <ActionCableProvider> {/* ✅ Wrap everything */}
-            {/* <ProtectedRoute> */}
-            <div className="flex w-full">
-                {/* Sidebar */}
-                <div className="w-64 shrink-0">
-                    <Sidebar />
-                </div>
+  const courtName = useLoginStore((state) => state.court_name);
+  return (
+    <ActionCableProvider>
+      {" "}
+      {/* ✅ Wrap everything */}
+      {/* <ProtectedRoute> */}
+      <div className="flex w-full">
+        {/* Sidebar */}
+        <div className="w-64 shrink-0">
+          <Sidebar />
+        </div>
 
-                {/* Main content area */}
-                <div className="flex-1 z-100">
-                    <div className="h-[65px] bg-white flex flex-row justify-between items-center p-7">
-                        <div>
-                            <h3 className="font-heading font-bold"></h3>
-                        </div>
-                        <div className="font-bold text-xl">Phuentsoling Dungkhag Court</div>
-                        <div className="flex flex-row items-center gap-4">
-                            <div>
-                                <p className="flex flex-row gap-4 items-center">
-                                    <span>Eng</span>
-                                    <Switch />
-                                    <span>DZO</span>
-                                </p>
-                            </div>
+        {/* Main content area */}
+        <div className="flex-1 z-100">
+          <div className="h-[65px] bg-white flex flex-row justify-between items-center p-7">
+            <div className="font-bold text-xl">{courtName} Court</div>
+            <div className="flex flex-row items-center gap-4">
+              <div>
+                <p className="flex flex-row gap-4 items-center">
+                  <span>Eng</span>
+                  <Switch />
+                  <span>DZO</span>
+                </p>
+              </div>
 
-                            <div className="cursor-pointer">
-                                <Bell className="w-6 h-6 text-gray-700" />
-                            </div>
-                            <div className="cursor-pointer">
-                                <Link href="/pages/users/profile">
-                                    <UserCircle className="w-8 h-8 text-gray-700" />
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Page content */}
-                    <main className="px-4 py-6">
-                        {children}
-                    </main>
-                </div>
+              <div className="cursor-pointer">
+                <Bell className="w-6 h-6 text-gray-700" />
+              </div>
+              <div className="cursor-pointer">
+                <Link href="/pages/users/profile">
+                  <UserCircle className="w-8 h-8 text-gray-700" />
+                </Link>
+              </div>
             </div>
-            {/* </ProtectedRoute> */}
-        </ActionCableProvider>
-    );
+          </div>
+
+          {/* Page content */}
+          <main className="px-4 py-6">{children}</main>
+        </div>
+      </div>
+      {/* </ProtectedRoute> */}
+    </ActionCableProvider>
+  );
 }

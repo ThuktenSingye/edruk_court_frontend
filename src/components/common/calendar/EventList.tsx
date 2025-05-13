@@ -1,14 +1,12 @@
 /** @format */
 
-import React from "react";
-
 const EventList = ({ events, formatDate, formatTime, onReschedule }: any) => {
   return (
     <div className="space-y-4">
       {events.map((event: any) => (
         <div
           key={event.id}
-          className="bg-white border border-[#046200] rounded-lg shadow p-4 flex flex-col justify-between relative">
+          className="bg-white border border-[#046200] rounded-lg shadow-md p-4 flex flex-col justify-between relative transition-transform duration-200 ease-in-out hover:shadow-2xl hover:-translate-y-1 hover:border-[#12B76A]">
           <div>
             <div className="text-[#0E1632] font-semibold text-sm mb-1">
               {event.extendedProps?.description || event.title}

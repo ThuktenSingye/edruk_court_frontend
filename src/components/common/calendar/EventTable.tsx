@@ -31,7 +31,6 @@ const EventTable: React.FC = () => {
     const fetchEvents = async () => {
       let token = useLoginStore.getState().token;
       if (!token) token = localStorage.getItem("token");
-      const host = window.location.hostname;
 
       console.log("🪪 Token used for /list:", token);
 
@@ -42,7 +41,7 @@ const EventTable: React.FC = () => {
 
       try {
         const response = await fetch(
-          `http://${host}:3001/api/v1/hearing_schedules/list`,
+          "http://nganglam.lvh.me:3001/api/v1/hearing_schedules/list",
           {
             headers: {
               Authorization: `Bearer ${token}`,

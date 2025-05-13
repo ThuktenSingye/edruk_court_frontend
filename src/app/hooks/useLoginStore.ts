@@ -1,3 +1,5 @@
+/** @format */
+
 // "use client";
 // import { create } from "zustand";
 // import axios from "axios";
@@ -142,164 +144,167 @@
 //     },
 // }));
 
-
-
 "use client";
 import { create } from "zustand";
 import axios from "axios";
 
 interface AuthState {
-    email: string;
-    password: string;
-    token: string | null;
-    isAuthenticated: boolean;
-    loading: boolean;
-    userRole: string | null;
-    userId: string | null; // ✅ Add this
-    setUser: (key: "email" | "password", value: string) => void;
-    setToken: (token: string) => void;
-    setUserRole: (role: string) => void;
-    setUserId: (id: string) => void; // ✅ Add this
-    login: () => Promise<void>;
-    logout: () => void;
-    checkAuth: () => boolean;
-    getUserRole: () => string | null;
+  email: string;
+  password: string;
+  token: string | null;
+  isAuthenticated: boolean;
+  court_name: string | null;
+  loading: boolean;
+  userRole: string | null;
+  userId: string | null; // ✅ Add this
+  setUser: (key: "email" | "password", value: string) => void;
+  setToken: (token: string) => void;
+  setUserRole: (role: string) => void;
+  setUserId: (id: string) => void; // ✅ Add this
+  login: () => Promise<void>;
+  logout: () => void;
+  checkAuth: () => boolean;
+  getUserRole: () => string | null;
 }
 
 const initializeAuthState = () => {
-    if (typeof window === "undefined") {
-        return {
-            token: null,
-            isAuthenticated: false,
-            userRole: null,
-            userId: null, // ✅ Add this
-        };
-    }
-
-    const token = localStorage.getItem("authToken");
-    const userRole = localStorage.getItem("userRole");
-    const userId = localStorage.getItem("userId");
-
+  if (typeof window === "undefined") {
     return {
-        token,
-        isAuthenticated: !!token,
-        userRole,
-        userId, // ✅ Add this
+      token: null,
+      isAuthenticated: false,
+      userRole: null,
+      userId: null, // ✅ Add this
     };
+  }
+
+  const token = localStorage.getItem("authToken");
+  const userRole = localStorage.getItem("userRole");
+  const userId = localStorage.getItem("userId");
+
+  return {
+    token,
+    isAuthenticated: !!token,
+    userRole,
+    userId, // ✅ Add this
+  };
 };
 
 const { token, isAuthenticated, userRole, userId } = initializeAuthState();
 
 export const useLoginStore = create<AuthState>((set, get) => ({
-    email: "",
-    password: "",
-    token,
-    isAuthenticated,
-    loading: false,
-    userRole,
-    userId, // ✅ Add this
+  email: "",
+  password: "",
+  token,
+  court_name: null,
+  isAuthenticated,
+  loading: false,
+  userRole,
+  userId, // ✅ Add this
 
-    setUser: (key, value) => set((state) => ({ ...state, [key]: value })),
+  setUser: (key, value) => set((state) => ({ ...state, [key]: value })),
 
-    setToken: (token) => {
-        if (typeof window !== "undefined") {
-            localStorage.setItem("authToken", token);
-        }
-        set({ token, isAuthenticated: !!token });
-    },
+  setToken: (token) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("authToken", token);
+    }
+    set({ token, isAuthenticated: !!token });
+  },
 
-    setUserRole: (role) => {
-        if (typeof window !== "undefined") {
-            localStorage.setItem("userRole", role);
-        }
-        set({ userRole: role });
-    },
+  setUserRole: (role) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("userRole", role);
+    }
+    set({ userRole: role });
+  },
 
-    setUserId: (id) => {
-        if (typeof window !== "undefined") {
-            localStorage.setItem("userId", id);
-        }
-        set({ userId: id });
-    },
+  setUserId: (id) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("userId", id);
+    }
+    set({ userId: id });
+  },
 
-    login: async () => {
-        const { email, password } = get();
-        if (!email || !password) return;
+  login: async () => {
+    const { email, password } = get();
+    if (!email || !password) return;
 
-        set({ loading: true });
+    set({ loading: true });
 
-        const host = window.location.hostname;
+    const host = window.location.hostname;
 
-        try {
-            const response = await axios.post(
-                `http://${host}:3001/api/v1/auth/sign_in`,
-                { user: { email, password } }
-            );
+    try {
+      const response = await axios.post(
+        `http://${host}:3001/api/v1/auth/sign_in`,
+        { user: { email, password } }
+      );
 
-            const bodyToken = response.data.token;
-            const authHeader = response.headers['authorization'];
-            const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
-            const token = headerToken || bodyToken;
+      const bodyToken = response.data.token;
+      const authHeader = response.headers["authorization"];
+      const headerToken = authHeader?.startsWith("Bearer ")
+        ? authHeader.split(" ")[1]
+        : null;
+      const token = headerToken || bodyToken;
 
-            if (!token) throw new Error("No token received");
+      if (!token) throw new Error("No token received");
 
-            const rolesArray = response.data.data?.roles || [];
-            const role = rolesArray.length > 0 ? rolesArray[0] : null;
-            const id = response.data.data.id;
-            console.log("IdDSDS", id)
+      const rolesArray = response.data.data?.roles || [];
+      const role = rolesArray.length > 0 ? rolesArray[0] : null;
+      const id = response.data.data.id;
+      console.log("IdDSDS", id);
 
-            set({
-                isAuthenticated: true,
-                token,
-                userRole: role,
-                userId: id,
-                loading: false,
-            });
+      set({
+        court_name: response.data.data.court_name,
+        isAuthenticated: true,
+        token,
+        userRole: role,
+        userId: id,
+        loading: false,
+      });
 
-            if (typeof window !== "undefined") {
-                localStorage.setItem("authToken", token);
-                localStorage.setItem("userId", id);
-                if (role) localStorage.setItem("userRole", role);
-                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            }
-        } catch (error) {
-            console.error("Error logging in:", error);
-            set({ loading: false });
-            throw error;
-        }
-    },
+      if (typeof window !== "undefined") {
+        localStorage.setItem("authToken", token);
+        localStorage.setItem("userId", id);
+        if (role) localStorage.setItem("userRole", role);
+        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      }
+    } catch (error) {
+      console.error("Error logging in:", error);
+      set({ loading: false });
+      throw error;
+    }
+  },
 
-    logout: () => {
-        if (typeof window !== "undefined") {
-            localStorage.removeItem("authToken");
-            localStorage.removeItem("userRole");
-            localStorage.removeItem("userId");
-            delete axios.defaults.headers.common['Authorization'];
-        }
-        set({
-            token: null,
-            isAuthenticated: false,
-            userRole: null,
-            userId: null,
-            email: "",
-            password: ""
-        });
-    },
+  logout: () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("userId");
+      delete axios.defaults.headers.common["Authorization"];
+    }
+    set({
+      token: null,
+      isAuthenticated: false,
+      userRole: null,
+      userId: null,
+      email: "",
+      password: "",
+    });
+  },
 
-    checkAuth: () => {
-        if (typeof window !== "undefined") {
-            const token = localStorage.getItem("authToken");
-            const userRole = localStorage.getItem("userRole");
-            const userId = localStorage.getItem("userId");
+  checkAuth: () => {
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("authToken");
+      const userRole = localStorage.getItem("userRole");
+      const userId = localStorage.getItem("userId");
 
-            if (token) {
-                set({ token, isAuthenticated: true, userRole, userId });
-                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-                return true;
-            }
-        }
-        return false;
-    },
+      if (token) {
+        set({ token, isAuthenticated: true, userRole, userId });
+        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+        return true;
+      }
+    }
+    return false;
+  },
 
-    getUserRole: () => get().userRole,
+  getUserRole: () => get().userRole,
 }));

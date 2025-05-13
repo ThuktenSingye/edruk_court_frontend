@@ -11,13 +11,12 @@ const CalendarEventSidebar: React.FC = () => {
   const token = useLoginStore((state) => state.token);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const host = window.location.hostname;
 
   useEffect(() => {
     const fetchEvents = async () => {
       try {
         const response = await axios.get(
-          `http://${host}:3001/api/v1/hearing_schedules/today`,
+          "http://nganglam.lvh.me:3001/api/v1/hearing_schedules/today",
           {
             headers: {
               Authorization: `Bearer ${token}`,
