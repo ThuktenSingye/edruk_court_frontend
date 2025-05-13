@@ -14,8 +14,6 @@ export default function EventDialog({
   open,
   onOpenChange,
   isRescheduling,
-  newEventTitle,
-  setNewEventTitle,
   caseId,
   setCaseId,
   hearingType,
