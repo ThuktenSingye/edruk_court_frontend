@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -17,6 +17,7 @@ import EventDialog from "@/components/common/calendar/EventDialog";
 import EventDetailsDialog from "@/components/common/calendar/EventDetailsDialog";
 import EventTable from "@/components/common/calendar/EventTable";
 import { useLoginStore } from "@/app/hooks/useLoginStore";
+import NewSchedule from "@/components/common/calendar/NewSchedule";
 
 const Calendar: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -31,6 +32,7 @@ const Calendar: React.FC = () => {
   const [currentEvents, setCurrentEvents] = useState<any[]>([]);
   const [isPosting, setIsPosting] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState<string>("");
+  const userRole = useLoginStore.getState().userRole;
 
   const handleDateClick = (selected: any) => {
     if (isPosting) return;
@@ -75,6 +77,7 @@ const Calendar: React.FC = () => {
         );
 
         const data = response.data?.data || [];
+        console.log("API RSPON CALDNER", data)
         const formatted = data.map((item: any) => ({
           id: item.id,
           title: item.case_title,
@@ -84,7 +87,7 @@ const Calendar: React.FC = () => {
             description: item.case_title,
             caseNumber: item.case_number,
             hearingType: item.hearing_type_name,
-            scheduledBy: `${item.scheduled_by.first_name} ${item.scheduled_by.last_name}`,
+            scheduledBy: `${item.scheduled_by?.first_name} ${item.scheduled_by?.last_name}`,
             status: item.schedule_status,
             scheduledDate: item.scheduled_date,
           },
@@ -122,13 +125,19 @@ const Calendar: React.FC = () => {
       )}
 
       <div
-        className={`bg-gray-100 min-h-screen p-6 ${
+        className={`min-h-screen ${
           isPosting ? "pointer-events-none" : ""
         }`}>
         <div
-          className={`bg-white rounded-xl shadow-md p-6 ${
+          className={` ${
             isPosting ? "opacity-90" : ""
           }`}>
+          {userRole == "Judge" && (
+              <div className='mb-10'>
+                <NewSchedule />
+              </div>
+          )}
+
           <div className="flex flex-col lg:flex-row gap-8">
             <div className="w-full lg:w-3/12">
               <CalendarEventSidebar />

@@ -5,6 +5,8 @@ import React, { useState, useEffect } from "react";
 import { Eye } from "lucide-react";
 import { useLoginStore } from "@/app/hooks/useLoginStore";
 import { getHearingActions } from "@/lib/hearingAction";
+import { Button } from "@/components/ui/button";
+import SignButtonOrStatus from "@/components/common/SignButtonOrStatus";
 
 interface HearingDocument {
   id: number;
@@ -44,7 +46,7 @@ const Documents: React.FC<DocumentsProps> = ({
   const token = useLoginStore((state) => state.token);
   const host = window.location.hostname;
 
-  const actions = getHearingActions(hearing_status, hearingType, userRole);
+  // const actions = getHearingActions(hearing_status, hearingType, userRole);
 
   console.log(
     "Documents component rendered with props:",
@@ -60,11 +62,6 @@ const Documents: React.FC<DocumentsProps> = ({
   const handleSign = async (documentId: number) => {
     if (!token) {
       alert("Unauthorized: No token found.");
-      return;
-    }
-
-    if (userRole !== "Registrar" && userRole !== "Judge") {
-      alert("Only Registrar and Judge can sign documents.");
       return;
     }
 
@@ -89,7 +86,9 @@ const Documents: React.FC<DocumentsProps> = ({
         }),
       });
 
+
       const responseData = await response.json();
+      console.log("singing response data", responseData);
 
       if (!response.ok) {
         throw new Error(
@@ -205,14 +204,14 @@ const Documents: React.FC<DocumentsProps> = ({
         <h3 className="text-lg font-semibold text-green-800 uppercase">
           Documents
         </h3>
-        {actions.showSignAll && (
+        {/* {actions.showSignAll && (
           <button
             className="text-sm font-medium text-white bg-green-800 hover:bg-green-700 px-3 py-1.5 rounded disabled:opacity-50"
             onClick={handleSignAll}
             disabled={signingAll}>
             {signingAll ? "Signing..." : "Sign All"}
           </button>
-        )}
+        )} */}
       </div>
 
       {loadingDocuments ? (
@@ -240,27 +239,17 @@ const Documents: React.FC<DocumentsProps> = ({
                   <Eye className="h-5 w-5 text-gray-600 hover:text-green-700 cursor-pointer" />
                 </a>
 
-                {doc.verified_at ? (
-                  <span className="text-sm text-green-600 font-medium">
-                    Signed
-                  </span>
-                ) : (userRole === "Registrar" &&
-                    doc.document_status !== "verified") ||
-                  (userRole === "Judge" && !doc.verified_by_judge) ||
-                  ["Plaintiff", "Defendant", "Lawyer", "Prosecutor"].includes(
-                    userRole
-                  ) ? (
-                  <button
-                    className="text-sm text-green-700 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={() => handleSign(doc.id)}
-                    disabled={signingOne === doc.id}>
-                    {signingOne === doc.id ? "Signing..." : "Sign"}
-                  </button>
-                ) : (
-                  <span className="text-sm text-gray-500">
-                    {doc.document_status}
-                  </span>
-                )}
+
+                <SignButtonOrStatus
+                    userRole={userRole}
+                    doc={doc}
+                    signingOne={signingOne}
+                    handleSign={handleSign}
+                    hearing_status={hearing_status}
+                    hearing_type={hearingType}
+                />
+
+
               </div>
             </div>
           ))}

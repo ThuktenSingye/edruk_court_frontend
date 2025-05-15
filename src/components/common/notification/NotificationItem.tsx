@@ -100,8 +100,13 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     <div
       className={`w-full bg-white border border-gray-300 shadow-2xl rounded-lg p-4 md:p-8  transition-opacity duration-300`}>
       <div className="space-y-6 md:space-y-8">
+        <div className="flex flex-row justify-between items-center">
+          <p className='font-bold text-lg'>{notification.case_title}</p>
+          <p>{notification.case_number}</p>
+        </div>
         {/* Notification Details */}
         <div className="flex flex-col md:flex-row md:justify-between gap-6 md:gap-8">
+
           {/* Description */}
           <div className="flex flex-col w-full md:w-1/2 space-y-2 md:space-y-4">
             <input

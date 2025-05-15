@@ -11,6 +11,12 @@ import ScheduleHearing from "@/components/registrar/cases/ScheduleHearings";
 import { useHearingStore } from "@/app/hooks/useHearingStore";
 import { getHearingActions } from "@/lib/hearingAction";
 import ScheduleHearingWithDetails from "./SchedulePostHearing";
+import {
+  isSigned,
+  canRegistrarOrClerkSign,
+  canJudgeSign,
+} from "../../../lib/signingPermission";
+import SignButtonOrStatus from "@/components/common/SignButtonOrStatus";
 
 interface Note {
   id: number;
@@ -248,27 +254,19 @@ const HearingContent: React.FC<HearingContentProps> = ({
     try {
       const host = window.location.hostname;
 
-      // Create FormData and populate it with the required fields
-      const formData = new FormData();
-      formData.append("case[case_status]", "closed");
-      formData.append(
-        "case[judgement_number]",
-        Math.floor(Math.random() * 1000000).toString()
-      ); // Random judgment number
-
       const response = await axios.put(
-        `http://${host}:3001/api/v1/cases/${caseId}`,
-        formData,
+        `http://${host}:3001/api/v1/cases/${caseId}/hearings/${hearingId}/judgement`,
+          {},
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
           },
         }
       );
 
-      if (response.data.status === "ok") {
+      if (response.status == 200) {
         alert("Case closed successfully!");
+        window.location.reload();
         // Optionally, you can show a toast notification here
       } else {
         alert("Failed to close the case.");
@@ -366,7 +364,7 @@ const HearingContent: React.FC<HearingContentProps> = ({
       )}
 
       {showDialog &&
-        (hearingType === "preliminary" ? (
+        (hearingType === "Miscellaneous" ? (
           <ScheduleHearing
             onClose={() => setShowDialog(false)}
             caseId={caseId}

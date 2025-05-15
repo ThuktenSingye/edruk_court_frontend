@@ -127,9 +127,9 @@ export default function NewSchedule() {
 
   if (error) {
     return (
-      <div className="w-full border rounded-xl p-4 shadow-md bg-white flex flex-col">
+      <div className="w-full border rounded-xl my-10 p-4 shadow-md bg-white flex flex-col">
         <h3 className="font-bold text-primary-normal">Your Pending Approval</h3>
-        <Card className="p-4 text-red-500">
+        <Card className="p-4 text-red-500 my-4">
           <div>Error: {error}</div>
           <Button onClick={fetchPendingSchedules} className="mt-2">
             Retry
@@ -183,6 +183,7 @@ export default function NewSchedule() {
                     {processing[schedule.id] ? "Processing..." : "Reject"}
                   </Button>
                   <Button
+                      className="bg-primary-normal text-white"
                     variant="default"
                     size="sm"
                     onClick={() => handleApproveReject(schedule, "approve")}

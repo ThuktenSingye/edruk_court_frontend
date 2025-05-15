@@ -12,11 +12,13 @@ const CalendarEventSidebar: React.FC = () => {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const host = window.location.hostname;
   useEffect(() => {
     const fetchEvents = async () => {
+
       try {
         const response = await axios.get(
-          "http://nganglam.lvh.me:3001/api/v1/hearing_schedules/today",
+          `http://${host}:3001/api/v1/hearing_schedules/today`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -42,9 +44,9 @@ const CalendarEventSidebar: React.FC = () => {
   }, [token]);
 
   return (
-    <div className="h-full max-h-[600px] overflow-y-auto border rounded-xl p-4 shadow-md bg-white flex flex-col">
+    <div className="h-full max-h-[560px] overflow-y-auto border rounded-xl p-4 shadow-md bg-white flex flex-col">
       <h2 className="text-lg font-semibold mb-3 text-green-900">
-        Hearing Schedule
+        Hearing Schedule Today
       </h2>
 
       {loading ? (

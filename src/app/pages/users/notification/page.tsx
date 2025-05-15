@@ -51,6 +51,7 @@ export default function NotificationPage() {
           ? jsonData.data.map((item: any) => ({
               id: item.id,
               case_id: item.params.case.id,
+              case_number: item.params.case.case_number,
               case_title: item.params.case.title,
               description: item.params?.message || `Notification ID ${item.id}`,
               date: item.params?.hearing_schedule?.scheduled_date

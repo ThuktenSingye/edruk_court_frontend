@@ -63,8 +63,7 @@ const Notes: React.FC<NotesProps> = ({
       }
 
       const data = await response.json();
-      console.log("notess data", data);
-      setLocalNotes(data);
+      setLocalNotes(data.data);
     } catch (error) {
       console.error("Error fetching notes:", error);
       toast.error("Failed to fetch notes");
@@ -91,10 +90,9 @@ const Notes: React.FC<NotesProps> = ({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ content: newNote }),
+        body: JSON.stringify({ note: { content: newNote } }),
       });
       const data = await response.json();
-      console.log("Newly added note:", data);
 
       toast.success("Note added successfully!");
 

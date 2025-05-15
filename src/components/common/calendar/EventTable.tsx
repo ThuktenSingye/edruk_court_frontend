@@ -27,6 +27,7 @@ const EventTable: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const eventsPerPage = 5;
 
+  const host = window.location.hostname;
   useEffect(() => {
     const fetchEvents = async () => {
       let token = useLoginStore.getState().token;
@@ -41,7 +42,7 @@ const EventTable: React.FC = () => {
 
       try {
         const response = await fetch(
-          "http://nganglam.lvh.me:3001/api/v1/hearing_schedules/list",
+          `http://${host}:3001/api/v1/hearing_schedules/list`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
